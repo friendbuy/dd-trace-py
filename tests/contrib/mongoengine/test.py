@@ -9,6 +9,7 @@ from nose.tools import eq_
 from ddtrace import Tracer, Pin
 from ddtrace.contrib.mongoengine.patch import patch, unpatch
 from ddtrace.ext import mongo as mongox
+
 # testing
 from ..config import MONGO_CONFIG
 from ...test_tracer import get_dummy_tracer
@@ -18,11 +19,12 @@ class Artist(mongoengine.Document):
     first_name = mongoengine.StringField(max_length=50)
     last_name = mongoengine.StringField(max_length=50)
 
+
 class MongoEngineCore(object):
 
     # Define the service at the class level, so that each test suite can use a different service
     # and therefore catch any sneaky badly-unpatched stuff.
-    TEST_SERVICE = 'deadbeef'
+    TEST_SERVICE = "deadbeef"
 
     def get_tracer_and_connect(self):
         # implement me
@@ -39,15 +41,15 @@ class MongoEngineCore(object):
         spans = tracer.writer.pop()
         eq_(len(spans), 1)
         span = spans[0]
-        eq_(span.resource, 'drop artist')
-        eq_(span.span_type, 'mongodb')
+        eq_(span.resource, "drop artist")
+        eq_(span.span_type, "mongodb")
         eq_(span.service, self.TEST_SERVICE)
         _assert_timing(span, start, end)
 
         start = end
         joni = Artist()
-        joni.first_name = 'Joni'
-        joni.last_name = 'Mitchell'
+        joni.first_name = "Joni"
+        joni.last_name = "Mitchell"
         joni.save()
         end = time.time()
 
@@ -55,8 +57,8 @@ class MongoEngineCore(object):
         spans = tracer.writer.pop()
         eq_(len(spans), 1)
         span = spans[0]
-        eq_(span.resource, 'insert artist')
-        eq_(span.span_type, 'mongodb')
+        eq_(span.resource, "insert artist")
+        eq_(span.span_type, "mongodb")
         eq_(span.service, self.TEST_SERVICE)
         _assert_timing(span, start, end)
 
@@ -65,14 +67,14 @@ class MongoEngineCore(object):
         artists = [a for a in Artist.objects]
         end = time.time()
         eq_(len(artists), 1)
-        eq_(artists[0].first_name, 'Joni')
-        eq_(artists[0].last_name, 'Mitchell')
+        eq_(artists[0].first_name, "Joni")
+        eq_(artists[0].last_name, "Mitchell")
 
         spans = tracer.writer.pop()
         eq_(len(spans), 1)
         span = spans[0]
-        eq_(span.resource, 'query artist {}')
-        eq_(span.span_type, 'mongodb')
+        eq_(span.resource, "query artist {}")
+        eq_(span.span_type, "mongodb")
         eq_(span.service, self.TEST_SERVICE)
         _assert_timing(span, start, end)
 
@@ -82,20 +84,20 @@ class MongoEngineCore(object):
         end = time.time()
         eq_(len(artists), 1)
         joni = artists[0]
-        eq_(artists[0].first_name, 'Joni')
-        eq_(artists[0].last_name, 'Mitchell')
+        eq_(artists[0].first_name, "Joni")
+        eq_(artists[0].last_name, "Mitchell")
 
         spans = tracer.writer.pop()
         eq_(len(spans), 1)
         span = spans[0]
         eq_(span.resource, 'query artist {"first_name": "?"}')
-        eq_(span.span_type, 'mongodb')
+        eq_(span.span_type, "mongodb")
         eq_(span.service, self.TEST_SERVICE)
         _assert_timing(span, start, end)
 
         # ensure updates work
         start = time.time()
-        joni.last_name = 'From Saskatoon'
+        joni.last_name = "From Saskatoon"
         joni.save()
         end = time.time()
 
@@ -103,7 +105,7 @@ class MongoEngineCore(object):
         eq_(len(spans), 1)
         span = spans[0]
         eq_(span.resource, 'update artist {"_id": "?"}')
-        eq_(span.span_type, 'mongodb')
+        eq_(span.span_type, "mongodb")
         eq_(span.service, self.TEST_SERVICE)
         _assert_timing(span, start, end)
 
@@ -116,7 +118,7 @@ class MongoEngineCore(object):
         eq_(len(spans), 1)
         span = spans[0]
         eq_(span.resource, 'delete artist {"_id": "?"}')
-        eq_(span.span_type, 'mongodb')
+        eq_(span.span_type, "mongodb")
         eq_(span.service, self.TEST_SERVICE)
         _assert_timing(span, start, end)
 
@@ -136,9 +138,8 @@ class TestMongoEnginePatchConnectDefault(MongoEngineCore):
 
     def get_tracer_and_connect(self):
         tracer = get_dummy_tracer()
-        Pin.get_from(mongoengine.connect).clone(
-            tracer=tracer).onto(mongoengine.connect)
-        mongoengine.connect(port=MONGO_CONFIG['port'])
+        Pin.get_from(mongoengine.connect).clone(tracer=tracer).onto(mongoengine.connect)
+        mongoengine.connect(port=MONGO_CONFIG["port"])
 
         return tracer
 
@@ -146,12 +147,12 @@ class TestMongoEnginePatchConnectDefault(MongoEngineCore):
 class TestMongoEnginePatchConnect(TestMongoEnginePatchConnectDefault):
     """Test suite with a global Pin for the connect function with custom service"""
 
-    TEST_SERVICE = 'test-mongo-patch-connect'
+    TEST_SERVICE = "test-mongo-patch-connect"
 
     def get_tracer_and_connect(self):
         tracer = TestMongoEnginePatchConnectDefault.get_tracer_and_connect(self)
         Pin(service=self.TEST_SERVICE, tracer=tracer).onto(mongoengine.connect)
-        mongoengine.connect(port=MONGO_CONFIG['port'])
+        mongoengine.connect(port=MONGO_CONFIG["port"])
 
         return tracer
 
@@ -171,21 +172,22 @@ class TestMongoEnginePatchClientDefault(MongoEngineCore):
 
     def get_tracer_and_connect(self):
         tracer = get_dummy_tracer()
-        client = mongoengine.connect(port=MONGO_CONFIG['port'])
+        client = mongoengine.connect(port=MONGO_CONFIG["port"])
         Pin.get_from(client).clone(tracer=tracer).onto(client)
 
         return tracer
 
+
 class TestMongoEnginePatchClient(TestMongoEnginePatchClientDefault):
     """Test suite with a Pin local to a specific client with custom service"""
 
-    TEST_SERVICE = 'test-mongo-patch-client'
+    TEST_SERVICE = "test-mongo-patch-client"
 
     def get_tracer_and_connect(self):
         tracer = get_dummy_tracer()
         # Set a connect-level service, to check that we properly override it
-        Pin(service='not-%s' % self.TEST_SERVICE).onto(mongoengine.connect)
-        client = mongoengine.connect(port=MONGO_CONFIG['port'])
+        Pin(service="not-%s" % self.TEST_SERVICE).onto(mongoengine.connect)
+        client = mongoengine.connect(port=MONGO_CONFIG["port"])
         Pin(service=self.TEST_SERVICE, tracer=tracer).onto(client)
 
         return tracer
@@ -197,7 +199,7 @@ class TestMongoEnginePatchClient(TestMongoEnginePatchClientDefault):
         patch()
         patch()
 
-        client = mongoengine.connect(port=MONGO_CONFIG['port'])
+        client = mongoengine.connect(port=MONGO_CONFIG["port"])
         Pin.get_from(client).clone(tracer=tracer).onto(client)
 
         Artist.drop_collection()
@@ -209,7 +211,7 @@ class TestMongoEnginePatchClient(TestMongoEnginePatchClientDefault):
         mongoengine.connection.disconnect()
         unpatch()
 
-        mongoengine.connect(port=MONGO_CONFIG['port'])
+        mongoengine.connect(port=MONGO_CONFIG["port"])
 
         Artist.drop_collection()
         spans = tracer.writer.pop()
@@ -218,7 +220,7 @@ class TestMongoEnginePatchClient(TestMongoEnginePatchClientDefault):
         # Test patch again
         patch()
 
-        client = mongoengine.connect(port=MONGO_CONFIG['port'])
+        client = mongoengine.connect(port=MONGO_CONFIG["port"])
         Pin.get_from(client).clone(tracer=tracer).onto(client)
 
         Artist.drop_collection()

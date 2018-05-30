@@ -15,19 +15,20 @@ class TestTracingContext(TestCase):
     Tests related to the ``Context`` class that hosts the trace for the
     current execution flow.
     """
+
     def test_add_span(self):
         # it should add multiple spans
         ctx = Context()
-        span = Span(tracer=None, name='fake_span')
+        span = Span(tracer=None, name="fake_span")
         ctx.add_span(span)
         eq_(1, len(ctx._trace))
-        eq_('fake_span', ctx._trace[0].name)
+        eq_("fake_span", ctx._trace[0].name)
         eq_(ctx, span.context)
 
     def test_context_sampled(self):
         # a context is sampled if the spans are sampled
         ctx = Context()
-        span = Span(tracer=None, name='fake_span')
+        span = Span(tracer=None, name="fake_span")
         ctx.add_span(span)
         ok_(ctx._sampled is True)
         ok_(ctx.sampling_priority is None)
@@ -37,19 +38,19 @@ class TestTracingContext(TestCase):
         ctx = Context()
         for priority in [USER_REJECT, AUTO_REJECT, AUTO_KEEP, USER_KEEP, None, 999]:
             ctx.sampling_priority = priority
-            span = Span(tracer=None, name=('fake_span_%s' % repr(priority)))
+            span = Span(tracer=None, name=("fake_span_%s" % repr(priority)))
             ctx.add_span(span)
             # It's "normal" to have sampled be true even when priority sampling is
             # set to 0 or -1. It would stay false even even with priority set to 2.
             # The only criteria to send (or not) the spans to the agent should be
             # this "sampled" attribute, as it's tightly related to the trace weight.
-            ok_(ctx._sampled is True, 'priority has no impact on sampled status')
+            ok_(ctx._sampled is True, "priority has no impact on sampled status")
             eq_(priority, ctx.sampling_priority)
 
     def test_current_span(self):
         # it should return the current active span
         ctx = Context()
-        span = Span(tracer=None, name='fake_span')
+        span = Span(tracer=None, name="fake_span")
         ctx.add_span(span)
         eq_(span, ctx.get_current_span())
 
@@ -57,7 +58,7 @@ class TestTracingContext(TestCase):
         # it should keep track of closed spans, moving
         # the current active to it's parent
         ctx = Context()
-        span = Span(tracer=None, name='fake_span')
+        span = Span(tracer=None, name="fake_span")
         ctx.add_span(span)
         ctx.close_span(span)
         eq_(1, ctx._finished_spans)
@@ -67,7 +68,7 @@ class TestTracingContext(TestCase):
         # it should return the internal trace structure
         # if the context is finished
         ctx = Context()
-        span = Span(tracer=None, name='fake_span')
+        span = Span(tracer=None, name="fake_span")
         ctx.add_span(span)
         ctx.close_span(span)
         trace, sampled = ctx.get()
@@ -83,7 +84,7 @@ class TestTracingContext(TestCase):
     def test_get_trace_empty(self):
         # it should return None if the Context is not finished
         ctx = Context()
-        span = Span(tracer=None, name='fake_span')
+        span = Span(tracer=None, name="fake_span")
         ctx.add_span(span)
         trace, sampled = ctx.get()
         ok_(trace is None)
@@ -92,7 +93,7 @@ class TestTracingContext(TestCase):
     def test_finished(self):
         # a Context is finished if all spans inside are finished
         ctx = Context()
-        span = Span(tracer=None, name='fake_span')
+        span = Span(tracer=None, name="fake_span")
         ctx.add_span(span)
         ctx.close_span(span)
         ok_(ctx.is_finished())
@@ -102,16 +103,26 @@ class TestTracingContext(TestCase):
         ctx = Context()
         ok_(ctx.is_finished() is False)
 
-    @mock.patch('logging.Logger.debug')
+    @mock.patch("logging.Logger.debug")
     def test_log_unfinished_spans(self, log):
         # when the root parent is finished, notify if there are spans still pending
         tracer = get_dummy_tracer()
         tracer.debug_logging = True
         ctx = Context()
         # manually create a root-child trace
-        root = Span(tracer=tracer, name='root')
-        child_1 = Span(tracer=tracer, name='child_1', trace_id=root.trace_id, parent_id=root.span_id)
-        child_2 = Span(tracer=tracer, name='child_2', trace_id=root.trace_id, parent_id=root.span_id)
+        root = Span(tracer=tracer, name="root")
+        child_1 = Span(
+            tracer=tracer,
+            name="child_1",
+            trace_id=root.trace_id,
+            parent_id=root.span_id,
+        )
+        child_2 = Span(
+            tracer=tracer,
+            name="child_2",
+            trace_id=root.trace_id,
+            parent_id=root.span_id,
+        )
         child_1._parent = root
         child_2._parent = root
         ctx.add_span(root)
@@ -124,21 +135,31 @@ class TestTracingContext(TestCase):
         child_1_log = log.call_args_list[-2][0][1]
         child_2_log = log.call_args_list[-1][0][1]
         eq_(2, unfinished_spans_log)
-        ok_('name child_1' in child_1_log)
-        ok_('name child_2' in child_2_log)
-        ok_('duration 0.000000s' in child_1_log)
-        ok_('duration 0.000000s' in child_2_log)
+        ok_("name child_1" in child_1_log)
+        ok_("name child_2" in child_2_log)
+        ok_("duration 0.000000s" in child_1_log)
+        ok_("duration 0.000000s" in child_2_log)
 
-    @mock.patch('logging.Logger.debug')
+    @mock.patch("logging.Logger.debug")
     def test_log_unfinished_spans_disabled(self, log):
         # the trace finished status logging is disabled
         tracer = get_dummy_tracer()
         tracer.debug_logging = False
         ctx = Context()
         # manually create a root-child trace
-        root = Span(tracer=tracer, name='root')
-        child_1 = Span(tracer=tracer, name='child_1', trace_id=root.trace_id, parent_id=root.span_id)
-        child_2 = Span(tracer=tracer, name='child_2', trace_id=root.trace_id, parent_id=root.span_id)
+        root = Span(tracer=tracer, name="root")
+        child_1 = Span(
+            tracer=tracer,
+            name="child_1",
+            trace_id=root.trace_id,
+            parent_id=root.span_id,
+        )
+        child_2 = Span(
+            tracer=tracer,
+            name="child_2",
+            trace_id=root.trace_id,
+            parent_id=root.span_id,
+        )
         child_1._parent = root
         child_2._parent = root
         ctx.add_span(root)
@@ -150,17 +171,22 @@ class TestTracingContext(TestCase):
         # the logger has never been invoked to print unfinished spans
         for call, _ in log.call_args_list:
             msg = call[0]
-            ok_('the trace has %d unfinished spans' not in msg)
+            ok_("the trace has %d unfinished spans" not in msg)
 
-    @mock.patch('logging.Logger.debug')
+    @mock.patch("logging.Logger.debug")
     def test_log_unfinished_spans_when_ok(self, log):
         # if the unfinished spans logging is enabled but the trace is finished, don't log anything
         tracer = get_dummy_tracer()
         tracer.debug_logging = True
         ctx = Context()
         # manually create a root-child trace
-        root = Span(tracer=tracer, name='root')
-        child = Span(tracer=tracer, name='child_1', trace_id=root.trace_id, parent_id=root.span_id)
+        root = Span(tracer=tracer, name="root")
+        child = Span(
+            tracer=tracer,
+            name="child_1",
+            trace_id=root.trace_id,
+            parent_id=root.span_id,
+        )
         child._parent = root
         ctx.add_span(root)
         ctx.add_span(child)
@@ -170,14 +196,14 @@ class TestTracingContext(TestCase):
         # the logger has never been invoked to print unfinished spans
         for call, _ in log.call_args_list:
             msg = call[0]
-            ok_('the trace has %d unfinished spans' not in msg)
+            ok_("the trace has %d unfinished spans" not in msg)
 
     def test_thread_safe(self):
         # the Context must be thread-safe
         ctx = Context()
 
         def _fill_ctx():
-            span = Span(tracer=None, name='fake_span')
+            span = Span(tracer=None, name="fake_span")
             ctx.add_span(span)
 
         threads = [threading.Thread(target=_fill_ctx) for _ in range(100)]
@@ -195,8 +221,10 @@ class TestTracingContext(TestCase):
         ctx = Context()
         ctx.sampling_priority = 2
         # manually create a root-child trace
-        root = Span(tracer=None, name='root')
-        child = Span(tracer=None, name='child_1', trace_id=root.trace_id, parent_id=root.span_id)
+        root = Span(tracer=None, name="root")
+        child = Span(
+            tracer=None, name="child_1", trace_id=root.trace_id, parent_id=root.span_id
+        )
         child._parent = root
         ctx.add_span(root)
         ctx.add_span(child)
@@ -215,6 +243,7 @@ class TestThreadContext(TestCase):
     Ensures that a ``ThreadLocalContext`` makes the Context
     local to each thread.
     """
+
     def test_get_or_create(self):
         # asking the Context multiple times should return
         # always the same instance
@@ -236,7 +265,7 @@ class TestThreadContext(TestCase):
 
         def _fill_ctx():
             ctx = l_ctx.get()
-            span = Span(tracer=None, name='fake_span')
+            span = Span(tracer=None, name="fake_span")
             ctx.add_span(span)
             eq_(1, len(ctx._trace))
 

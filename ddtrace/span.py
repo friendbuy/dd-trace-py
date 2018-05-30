@@ -16,32 +16,31 @@ class Span(object):
 
     __slots__ = [
         # Public span attributes
-        'service',
-        'name',
-        'resource',
-        'span_id',
-        'trace_id',
-        'parent_id',
-        'meta',
-        'error',
-        'metrics',
-        'span_type',
-        'start',
-        'duration',
+        "service",
+        "name",
+        "resource",
+        "span_id",
+        "trace_id",
+        "parent_id",
+        "meta",
+        "error",
+        "metrics",
+        "span_type",
+        "start",
+        "duration",
         # Sampler attributes
-        'sampled',
+        "sampled",
         # Internal attributes
-        '_tracer',
-        '_context',
-        '_finished',
-        '_parent',
+        "_tracer",
+        "_context",
+        "_finished",
+        "_parent",
     ]
 
     def __init__(
         self,
         tracer,
         name,
-
         service=None,
         resource=None,
         span_type=None,
@@ -187,36 +186,36 @@ class Span(object):
 
     def to_dict(self):
         d = {
-            'trace_id' : self.trace_id,
-            'parent_id' : self.parent_id,
-            'span_id' : self.span_id,
-            'service': self.service,
-            'resource' : self.resource,
-            'name' : self.name,
-            'error': self.error,
+            "trace_id": self.trace_id,
+            "parent_id": self.parent_id,
+            "span_id": self.span_id,
+            "service": self.service,
+            "resource": self.resource,
+            "name": self.name,
+            "error": self.error,
         }
 
         # a common mistake is to set the error field to a boolean instead of an
         # int. let's special case that here, because it's sure to happen in
         # customer code.
-        err = d.get('error')
+        err = d.get("error")
         if err and type(err) == bool:
-            d['error'] = 1
+            d["error"] = 1
 
         if self.start:
-            d['start'] = int(self.start * 1e9)  # ns
+            d["start"] = int(self.start * 1e9)  # ns
 
         if self.duration:
-            d['duration'] = int(self.duration * 1e9)  # ns
+            d["duration"] = int(self.duration * 1e9)  # ns
 
         if self.meta:
-            d['meta'] = self.meta
+            d["meta"] = self.meta
 
         if self.metrics:
-            d['metrics'] = self.metrics
+            d["metrics"] = self.metrics
 
         if self.span_type:
-            d['type'] = self.span_type
+            d["type"] = self.span_type
 
         return d
 
@@ -226,16 +225,18 @@ class Span(object):
         """
         (exc_type, exc_val, exc_tb) = sys.exc_info()
 
-        if (exc_type and exc_val and exc_tb):
+        if exc_type and exc_val and exc_tb:
             self.set_exc_info(exc_type, exc_val, exc_tb)
         else:
-            tb = ''.join(traceback.format_stack(limit=limit + 1)[:-1])
-            self.set_tag(errors.ERROR_STACK, tb)  # FIXME[gabin] Want to replace "error.stack" tag with "python.stack"
+            tb = "".join(traceback.format_stack(limit=limit + 1)[:-1])
+            self.set_tag(
+                errors.ERROR_STACK, tb
+            )  # FIXME[gabin] Want to replace "error.stack" tag with "python.stack"
 
     def set_exc_info(self, exc_type, exc_val, exc_tb):
         """ Tag the span with an error tuple as from `sys.exc_info()`. """
         if not (exc_type and exc_val and exc_tb):
-            return # nothing to do
+            return  # nothing to do
 
         self.error = 1
 
@@ -261,18 +262,18 @@ class Span(object):
     def pprint(self):
         """ Return a human readable version of the span. """
         lines = [
-            ('name', self.name),
+            ("name", self.name),
             ("id", self.span_id),
             ("trace_id", self.trace_id),
             ("parent_id", self.parent_id),
             ("service", self.service),
             ("resource", self.resource),
-            ('type', self.span_type),
+            ("type", self.span_type),
             ("start", self.start),
             ("end", "" if not self.duration else self.start + self.duration),
             ("duration", "%fs" % (self.duration or 0)),
             ("error", self.error),
-            ("tags", "")
+            ("tags", ""),
         ]
 
         lines.extend((" ", "%s:%s" % kv) for kv in sorted(self.meta.items()))
@@ -308,6 +309,7 @@ class Span(object):
             self.parent_id,
             self.name,
         )
+
 
 def _new_id():
     """Generate a random trace_id or span_id"""

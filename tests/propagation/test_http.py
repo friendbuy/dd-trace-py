@@ -12,11 +12,13 @@ from ddtrace.propagation.http import (
     HTTP_HEADER_SAMPLING_PRIORITY,
 )
 
+
 class TestHttpPropagation(TestCase):
     """
     Tests related to the ``Context`` class that hosts the trace for the
     current execution flow.
     """
+
     def test_inject(self):
         tracer = get_dummy_tracer()
 
@@ -29,14 +31,13 @@ class TestHttpPropagation(TestCase):
             eq_(int(headers[HTTP_HEADER_PARENT_ID]), span.span_id)
             # TODO: do it for priority too
 
-
     def test_extract(self):
         tracer = get_dummy_tracer()
 
         headers = {
-            HTTP_HEADER_TRACE_ID: '1234',
-            HTTP_HEADER_PARENT_ID: '5678',
-            HTTP_HEADER_SAMPLING_PRIORITY: '1',
+            HTTP_HEADER_TRACE_ID: "1234",
+            HTTP_HEADER_PARENT_ID: "5678",
+            HTTP_HEADER_SAMPLING_PRIORITY: "1",
         }
 
         propagator = HTTPPropagator()

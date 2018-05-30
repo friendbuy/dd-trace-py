@@ -13,7 +13,12 @@ class DdtraceRunTest(unittest.TestCase):
         """
         Clear DATADOG_* env vars between tests
         """
-        for k in ('DATADOG_ENV', 'DATADOG_TRACE_ENABLED', 'DATADOG_SERVICE_NAME', 'DATADOG_TRACE_DEBUG'):
+        for k in (
+            "DATADOG_ENV",
+            "DATADOG_TRACE_ENABLED",
+            "DATADOG_SERVICE_NAME",
+            "DATADOG_TRACE_DEBUG",
+        ):
             if k in os.environ:
                 del os.environ[k]
 
@@ -24,7 +29,7 @@ class DdtraceRunTest(unittest.TestCase):
         os.environ["DATADOG_SERVICE_NAME"] = "my_test_service"
 
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_service.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_service.py"]
         )
         assert out.startswith(b"Test success")
 
@@ -34,7 +39,7 @@ class DdtraceRunTest(unittest.TestCase):
         """
         os.environ["DATADOG_ENV"] = "test"
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_env.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_env.py"]
         )
         assert out.startswith(b"Test success")
 
@@ -44,13 +49,13 @@ class DdtraceRunTest(unittest.TestCase):
         """
         os.environ["DATADOG_TRACE_ENABLED"] = "false"
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_disabled.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_disabled.py"]
         )
         assert out.startswith(b"Test success")
 
         os.environ["DATADOG_TRACE_ENABLED"] = "true"
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_enabled.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_enabled.py"]
         )
         assert out.startswith(b"Test success")
 
@@ -59,13 +64,13 @@ class DdtraceRunTest(unittest.TestCase):
         Using `ddtrace-run` registers some generic patched modules
         """
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_patched_modules.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_patched_modules.py"]
         )
         assert out.startswith(b"Test success")
 
     def test_integration(self):
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', '-m', 'tests.commands.ddtrace_run_integration']
+            ["ddtrace-run", "python", "-m", "tests.commands.ddtrace_run_integration"]
         )
         assert out.startswith(b"Test success")
 
@@ -75,13 +80,13 @@ class DdtraceRunTest(unittest.TestCase):
         """
         os.environ["DATADOG_TRACE_DEBUG"] = "false"
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_no_debug.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_no_debug.py"]
         )
         assert out.startswith(b"Test success")
 
         os.environ["DATADOG_TRACE_DEBUG"] = "true"
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_debug.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_debug.py"]
         )
         assert out.startswith(b"Test success")
 
@@ -93,7 +98,7 @@ class DdtraceRunTest(unittest.TestCase):
         os.environ["DATADOG_TRACE_AGENT_HOSTNAME"] = "172.10.0.1"
         os.environ["DATADOG_TRACE_AGENT_PORT"] = "8126"
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_hostname.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_hostname.py"]
         )
         assert out.startswith(b"Test success")
 
@@ -103,7 +108,7 @@ class DdtraceRunTest(unittest.TestCase):
         """
         os.environ["DATADOG_PRIORITY_SAMPLING"] = "True"
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_priority_sampling.py']
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_priority_sampling.py"]
         )
         assert out.startswith(b"Test success")
 
@@ -111,7 +116,11 @@ class DdtraceRunTest(unittest.TestCase):
         """
         DATADOG_PATCH_MODULES overrides the defaults for patch_all()
         """
-        from ddtrace.bootstrap.sitecustomize import EXTRA_PATCHED_MODULES, update_patched_modules
+        from ddtrace.bootstrap.sitecustomize import (
+            EXTRA_PATCHED_MODULES,
+            update_patched_modules,
+        )
+
         orig = EXTRA_PATCHED_MODULES.copy()
 
         # empty / malformed strings are no-ops
@@ -154,24 +163,35 @@ class DdtraceRunTest(unittest.TestCase):
         # [Regression test]: ensure users `sitecustomize.py` is properly loaded,
         # so that our `bootstrap/sitecustomize.py` doesn't override the one
         # defined in users' PYTHONPATH.
-        env = inject_sitecustomize('tests/commands/bootstrap')
+        env = inject_sitecustomize("tests/commands/bootstrap")
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_sitecustomize.py'],
+            ["ddtrace-run", "python", "tests/commands/ddtrace_run_sitecustomize.py"],
             env=env,
         )
         assert out.startswith(b"Test success")
 
     def test_sitecustomize_run_suppressed(self):
         # ensure `sitecustomize.py` is not loaded if `-S` is used
-        env = inject_sitecustomize('tests/commands/bootstrap')
+        env = inject_sitecustomize("tests/commands/bootstrap")
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_sitecustomize.py', '-S'],
+            [
+                "ddtrace-run",
+                "python",
+                "tests/commands/ddtrace_run_sitecustomize.py",
+                "-S",
+            ],
             env=env,
         )
         assert out.startswith(b"Test success")
 
     def test_argv_passed(self):
         out = subprocess.check_output(
-            ['ddtrace-run', 'python', 'tests/commands/ddtrace_run_argv.py', 'foo', 'bar']
+            [
+                "ddtrace-run",
+                "python",
+                "tests/commands/ddtrace_run_argv.py",
+                "foo",
+                "bar",
+            ]
         )
         assert out.startswith(b"Test success")

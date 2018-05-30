@@ -14,9 +14,9 @@ def _extract_conn_tags(conn_kwargs):
     """ Transform redis conn info into dogtrace metas """
     try:
         return {
-            net.TARGET_HOST: conn_kwargs['host'],
-            net.TARGET_PORT: conn_kwargs['port'],
-            redisx.DB: conn_kwargs['db'] or 0,
+            net.TARGET_HOST: conn_kwargs["host"],
+            net.TARGET_PORT: conn_kwargs["port"],
+            redisx.DB: conn_kwargs["db"] or 0,
         }
     except Exception:
         return {}
@@ -39,7 +39,7 @@ def format_command_args(args):
                 cmd = cmd[:VALUE_MAX_LEN] + VALUE_TOO_LONG_MARK
 
             if length + len(cmd) > CMD_MAX_LEN:
-                prefix = cmd[:CMD_MAX_LEN - length]
+                prefix = cmd[: CMD_MAX_LEN - length]
                 out.append("%s%s" % (prefix, VALUE_TOO_LONG_MARK))
                 break
 

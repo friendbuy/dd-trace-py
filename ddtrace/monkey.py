@@ -15,30 +15,29 @@ log = logging.getLogger(__name__)
 
 # Default set of modules to automatically patch or not
 PATCH_MODULES = {
-    'asyncio': False,
-    'boto': True,
-    'botocore': True,
-    'bottle': False,
-    'cassandra': True,
-    'celery': True,
-    'elasticsearch': True,
-    'futures': False,  # experimental propagation
-    'mongoengine': True,
-    'mysql': True,
-    'mysqldb': True,
-    'pymysql': True,
-    'psycopg': True,
-    'pylibmc': True,
-    'pymongo': True,
-    'redis': True,
-    'requests': False,  # Not ready yet
-    'sqlalchemy': False,  # Prefer DB client instrumentation
-    'sqlite3': True,
-    'aiohttp': True,  # requires asyncio (Python 3.4+)
-    'aiopg': True,
-    'aiobotocore': False,
-    'httplib': False,
-
+    "asyncio": False,
+    "boto": True,
+    "botocore": True,
+    "bottle": False,
+    "cassandra": True,
+    "celery": True,
+    "elasticsearch": True,
+    "futures": False,  # experimental propagation
+    "mongoengine": True,
+    "mysql": True,
+    "mysqldb": True,
+    "pymysql": True,
+    "psycopg": True,
+    "pylibmc": True,
+    "pymongo": True,
+    "redis": True,
+    "requests": False,  # Not ready yet
+    "sqlalchemy": False,  # Prefer DB client instrumentation
+    "sqlite3": True,
+    "aiohttp": True,  # requires asyncio (Python 3.4+)
+    "aiopg": True,
+    "aiobotocore": False,
+    "httplib": False,
     # Ignore some web framework integrations that might be configured explicitly in code
     "django": False,
     "flask": False,
@@ -53,6 +52,7 @@ _PATCHED_MODULES = set()
 
 class PatchException(Exception):
     """Wraps regular `Exception` class when patching modules"""
+
     pass
 
 
@@ -67,6 +67,7 @@ def patch_all(**patch_modules):
     modules.update(patch_modules)
 
     patch(raise_errors=False, **modules)
+
 
 def patch(raise_errors=True, **patch_modules):
     """Patch only a set of given modules.
@@ -83,10 +84,12 @@ def patch(raise_errors=True, **patch_modules):
         if patched:
             count += 1
 
-    log.info("patched %s/%s modules (%s)",
+    log.info(
+        "patched %s/%s modules (%s)",
         count,
         len(modules),
-        ",".join(get_patched_modules()))
+        ",".join(get_patched_modules()),
+    )
 
 
 def patch_module(module, raise_errors=True):
@@ -102,10 +105,12 @@ def patch_module(module, raise_errors=True):
         log.debug("failed to patch %s: %s", module, exc)
         return False
 
+
 def get_patched_modules():
     """Get the list of patched modules"""
     with _LOCK:
         return sorted(_PATCHED_MODULES)
+
 
 def _patch_module(module):
     """_patch_module will attempt to monkey patch the module.
@@ -113,7 +118,7 @@ def _patch_module(module):
     Returns if the module got patched.
     Can also raise errors if it fails.
     """
-    path = 'ddtrace.contrib.%s' % module
+    path = "ddtrace.contrib.%s" % module
     with _LOCK:
         if module in _PATCHED_MODULES:
             log.debug("already patched: %s", path)
@@ -124,11 +129,11 @@ def _patch_module(module):
             imported_module.patch()
         except ImportError:
             # if the import fails, the integration is not available
-            raise PatchException('integration not available')
+            raise PatchException("integration not available")
         except AttributeError:
             # if patch() is not available in the module, it means
             # that the library is not installed in the environment
-            raise PatchException('module not installed')
+            raise PatchException("module not installed")
 
         _PATCHED_MODULES.add(module)
         return True

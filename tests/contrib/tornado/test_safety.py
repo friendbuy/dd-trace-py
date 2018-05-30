@@ -16,16 +16,17 @@ class TestAsyncConcurrency(TornadoTestCase):
     """
     Ensure that application instrumentation doesn't break asynchronous concurrency.
     """
+
     @gen_test
     def test_concurrent_requests(self):
         # the application must handle concurrent calls
         def make_requests():
             # use a blocking HTTP client (we're in another thread)
             http_client = httpclient.HTTPClient()
-            url = self.get_url('/nested/')
+            url = self.get_url("/nested/")
             response = http_client.fetch(url)
             eq_(200, response.code)
-            eq_('OK', response.body.decode('utf-8'))
+            eq_("OK", response.body.decode("utf-8"))
             # freeing file descriptors
             http_client.close()
 
@@ -54,7 +55,7 @@ class TestAppSafety(TornadoTestCase):
         patch()
         unpatch()
 
-        response = self.fetch('/success/')
+        response = self.fetch("/success/")
         eq_(200, response.code)
 
         traces = self.tracer.writer.pop_traces()
@@ -65,7 +66,7 @@ class TestAppSafety(TornadoTestCase):
         unpatch()
         unpatch()
 
-        response = self.fetch('/success/')
+        response = self.fetch("/success/")
         eq_(200, response.code)
 
         traces = self.tracer.writer.pop_traces()
@@ -76,7 +77,7 @@ class TestAppSafety(TornadoTestCase):
         patch()
         patch()
 
-        response = self.fetch('/success/')
+        response = self.fetch("/success/")
         eq_(200, response.code)
 
         traces = self.tracer.writer.pop_traces()
@@ -85,7 +86,7 @@ class TestAppSafety(TornadoTestCase):
 
     def test_arbitrary_resource_querystring(self):
         # users inputs should not determine `span.resource` field
-        response = self.fetch('/success/?magic_number=42')
+        response = self.fetch("/success/?magic_number=42")
         eq_(200, response.code)
 
         traces = self.tracer.writer.pop_traces()
@@ -93,12 +94,12 @@ class TestAppSafety(TornadoTestCase):
         eq_(1, len(traces[0]))
 
         request_span = traces[0][0]
-        eq_('tests.contrib.tornado.web.app.SuccessHandler', request_span.resource)
-        eq_('/success/?magic_number=42', request_span.get_tag('http.url'))
+        eq_("tests.contrib.tornado.web.app.SuccessHandler", request_span.resource)
+        eq_("/success/?magic_number=42", request_span.get_tag("http.url"))
 
     def test_arbitrary_resource_404(self):
         # users inputs should not determine `span.resource` field
-        response = self.fetch('/does_not_exist/')
+        response = self.fetch("/does_not_exist/")
         eq_(404, response.code)
 
         traces = self.tracer.writer.pop_traces()
@@ -106,8 +107,8 @@ class TestAppSafety(TornadoTestCase):
         eq_(1, len(traces[0]))
 
         request_span = traces[0][0]
-        eq_('tornado.web.ErrorHandler', request_span.resource)
-        eq_('/does_not_exist/', request_span.get_tag('http.url'))
+        eq_("tornado.web.ErrorHandler", request_span.resource)
+        eq_("/does_not_exist/", request_span.get_tag("http.url"))
 
     @gen_test
     def test_futures_without_context(self):
@@ -116,7 +117,7 @@ class TestAppSafety(TornadoTestCase):
         from .web.compat import ThreadPoolExecutor
 
         def job():
-            with self.tracer.trace('job'):
+            with self.tracer.trace("job"):
                 return 42
 
         executor = ThreadPoolExecutor(max_workers=3)
@@ -128,7 +129,7 @@ class TestAppSafety(TornadoTestCase):
 
         # this trace yields the execution of the thread
         span = traces[0][0]
-        eq_('job', span.name)
+        eq_("job", span.name)
 
 
 class TestCustomAppSafety(TornadoTestCase):
@@ -136,17 +137,18 @@ class TestCustomAppSafety(TornadoTestCase):
     Ensure that the application patch has the proper safety guards,
     even for custom default handlers.
     """
+
     def get_settings(self):
         return {
-            'default_handler_class': CustomDefaultHandler,
-            'default_handler_args': dict(status_code=400),
+            "default_handler_class": CustomDefaultHandler,
+            "default_handler_args": dict(status_code=400),
         }
 
     def test_trace_unpatch(self):
         # the application must not be traced if unpatch() is called
         unpatch()
 
-        response = self.fetch('/custom_handler/')
+        response = self.fetch("/custom_handler/")
         eq_(400, response.code)
 
         traces = self.tracer.writer.pop_traces()

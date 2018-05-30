@@ -16,7 +16,8 @@ METHOD = "http.method"
 STATUS_CODE = "http.status_code"
 
 # template render span type
-TEMPLATE = 'template'
+TEMPLATE = "template"
+
 
 def normalize_status_code(code):
-    return code.split(' ')[0]
+    return code.split(" ")[0]

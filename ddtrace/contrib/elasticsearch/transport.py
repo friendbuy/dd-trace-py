@@ -8,17 +8,15 @@ from ...utils.deprecation import deprecated
 from ...compat import urlencode
 from ...ext import AppTypes, http
 
-DEFAULT_SERVICE = 'elasticsearch'
-SPAN_TYPE = 'elasticsearch'
+DEFAULT_SERVICE = "elasticsearch"
+SPAN_TYPE = "elasticsearch"
 
 
-@deprecated(message='Use patching instead (see the docs).', version='1.0.0')
+@deprecated(message="Use patching instead (see the docs).", version="1.0.0")
 def get_traced_transport(datadog_tracer, datadog_service=DEFAULT_SERVICE):
 
     datadog_tracer.set_service_info(
-        service=datadog_service,
-        app=SPAN_TYPE,
-        app_type=AppTypes.db,
+        service=datadog_service, app=SPAN_TYPE, app_type=AppTypes.db
     )
 
     class TracedTransport(Transport):
@@ -34,7 +32,8 @@ def get_traced_transport(datadog_tracer, datadog_service=DEFAULT_SERVICE):
                 # Don't instrument if the trace is not sampled
                 if not s.sampled:
                     return super(TracedTransport, self).perform_request(
-                        method, url, params=params, body=body)
+                        method, url, params=params, body=body
+                    )
 
                 s.service = self._datadog_service
                 s.span_type = SPAN_TYPE
@@ -46,7 +45,9 @@ def get_traced_transport(datadog_tracer, datadog_service=DEFAULT_SERVICE):
                 s = quantize(s)
 
                 try:
-                    result = super(TracedTransport, self).perform_request(method, url, params=params, body=body)
+                    result = super(TracedTransport, self).perform_request(
+                        method, url, params=params, body=body
+                    )
                 except TransportError as e:
                     s.set_tag(http.STATUS_CODE, e.status_code)
                     raise
@@ -68,4 +69,5 @@ def get_traced_transport(datadog_tracer, datadog_service=DEFAULT_SERVICE):
                     s.set_metric(metadata.TOOK, int(took))
 
                 return result
+
     return TracedTransport

@@ -1,5 +1,5 @@
-URL = 'elasticsearch.url'
-METHOD = 'elasticsearch.method'
-TOOK = 'elasticsearch.took'
-PARAMS = 'elasticsearch.params'
-BODY = 'elasticsearch.body'
+URL = "elasticsearch.url"
+METHOD = "elasticsearch.method"
+TOOK = "elasticsearch.took"
+PARAMS = "elasticsearch.params"
+BODY = "elasticsearch.body"

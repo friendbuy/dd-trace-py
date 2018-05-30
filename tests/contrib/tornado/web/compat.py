@@ -19,6 +19,7 @@ except ImportError:
         it's required to be defensive when we have different `Executor`
         implementations.
         """
+
         def __init__(self, *args, **kwargs):
             # we accept any kind of interface
             super(ThreadPoolExecutor, self).__init__()

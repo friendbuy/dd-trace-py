@@ -77,7 +77,6 @@ class PylibmcCore(object):
         resources = sorted(s.resource for s in spans)
         eq_(expected_resources, resources)
 
-
     def test_clone(self):
         # ensure cloned connections are traced as well.
         client, tracer = self.get_client()
@@ -96,9 +95,9 @@ class PylibmcCore(object):
         client, tracer = self.get_client()
         # test
         start = time.time()
-        client.set_multi({"a":1, "b":2})
+        client.set_multi({"a": 1, "b": 2})
         out = client.get_multi(["a", "c"])
-        eq_(out, {"a":1})
+        eq_(out, {"a": 1})
         client.delete_multi(["a", "c"])
         end = time.time()
         # verify
@@ -113,28 +112,27 @@ class PylibmcCore(object):
         client, tracer = self.get_client()
         # test
         start = time.time()
-        client.set_multi({"a":1, "b":2}, key_prefix='foo')
-        out = client.get_multi(["a", "c"], key_prefix='foo')
-        eq_(out, {"a":1})
-        client.delete_multi(["a", "c"], key_prefix='foo')
+        client.set_multi({"a": 1, "b": 2}, key_prefix="foo")
+        out = client.get_multi(["a", "c"], key_prefix="foo")
+        eq_(out, {"a": 1})
+        client.delete_multi(["a", "c"], key_prefix="foo")
         end = time.time()
         # verify
         spans = tracer.writer.pop()
         for s in spans:
             self._verify_cache_span(s, start, end)
-            eq_(s.get_tag("memcached.query"), "%s foo" % s.resource,)
+            eq_(s.get_tag("memcached.query"), "%s foo" % s.resource)
         expected_resources = sorted(["get_multi", "set_multi", "delete_multi"])
         resources = sorted(s.resource for s in spans)
         eq_(expected_resources, resources)
 
-
     def test_get_set_delete(self):
         client, tracer = self.get_client()
         # test
-        k = u'cafe'
+        k = u"cafe"
         v = "val-foo"
         start = time.time()
-        client.delete(k) # just in case
+        client.delete(k)  # just in case
         out = client.get(k)
         assert out is None, out
         client.set(k, v)
@@ -150,7 +148,6 @@ class PylibmcCore(object):
         resources = sorted(s.resource for s in spans)
         eq_(expected_resources, resources)
 
-
     def _verify_cache_span(self, s, start, end):
         assert s.start > start
         assert s.start + s.duration < end
@@ -161,11 +158,10 @@ class PylibmcCore(object):
         eq_(s.get_tag("out.port"), str(cfg["port"]))
 
 
-
 class TestPylibmcLegacy(PylibmcCore):
     """Test suite for the tracing of pylibmc with the legacy TracedClient interface"""
 
-    TEST_SERVICE = 'mc-legacy'
+    TEST_SERVICE = "mc-legacy"
 
     def get_client(self):
         url = "%s:%s" % (cfg["host"], cfg["port"])
@@ -197,10 +193,11 @@ class TestPylibmcPatchDefault(PylibmcCore):
 
         return client, tracer
 
+
 class TestPylibmcPatch(TestPylibmcPatchDefault):
     """Test suite for the tracing of pylibmc with a configured lib patching"""
 
-    TEST_SERVICE = 'mc-custom-patch'
+    TEST_SERVICE = "mc-custom-patch"
 
     def get_client(self):
         client, tracer = TestPylibmcPatchDefault.get_client(self)
@@ -219,9 +216,9 @@ class TestPylibmcPatch(TestPylibmcPatchDefault):
         patch()
 
         client = pylibmc.Client([url])
-        Pin.get_from(client).clone(
-            service=self.TEST_SERVICE,
-            tracer=tracer).onto(client)
+        Pin.get_from(client).clone(service=self.TEST_SERVICE, tracer=tracer).onto(
+            client
+        )
 
         client.set("a", 1)
 
@@ -248,4 +245,3 @@ class TestPylibmcPatch(TestPylibmcPatchDefault):
         spans = writer.pop()
         assert spans, spans
         eq_(len(spans), 1)
-

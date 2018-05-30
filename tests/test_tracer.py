@@ -30,8 +30,9 @@ def test_tracer_vars():
     # defaults
     s = tracer.trace("a")
     eq_(s.service, None)
-    eq_(s.resource, "a") # inherits
+    eq_(s.resource, "a")  # inherits
     eq_(s.span_type, None)
+
 
 def test_tracer():
     # add some dummy tracing code.
@@ -61,7 +62,7 @@ def test_tracer():
     spans = writer.pop()
     assert spans, "%s" % spans
     eq_(len(spans), 3)
-    spans_by_name = {s.name:s for s in spans}
+    spans_by_name = {s.name: s for s in spans}
     eq_(len(spans_by_name), 3)
 
     make = spans_by_name["cake.make"]
@@ -73,15 +74,15 @@ def test_tracer():
         s = spans_by_name[other]
         eq_(s.parent_id, make.span_id)
         eq_(s.trace_id, make.trace_id)
-        eq_(s.service, make.service) # ensure it inherits the service
-        eq_(s.resource, s.name)      # ensure when we don't set a resource, it's there.
-
+        eq_(s.service, make.service)  # ensure it inherits the service
+        eq_(s.resource, s.name)  # ensure when we don't set a resource, it's there.
 
     # do it again and make sure it has new trace ids
     _make_cake()
     spans = writer.pop()
     for s in spans:
         assert s.trace_id != make.trace_id
+
 
 def test_tracer_pid():
     writer = DummyWriter()
@@ -90,30 +91,34 @@ def test_tracer_pid():
     with tracer.trace("root") as root_span:
         with tracer.trace("child") as child_span:
             time.sleep(0.05)
-    eq_(root_span.get_tag(system.PID), str(getpid())) # Root span should contain the pid of the current process
-    eq_(child_span.get_tag(system.PID), None) # Child span should not contain a pid tag
+    eq_(
+        root_span.get_tag(system.PID), str(getpid())
+    )  # Root span should contain the pid of the current process
+    eq_(child_span.get_tag(system.PID), None)  # Child span should not contain a pid tag
+
 
 def test_tracer_wrap():
     writer = DummyWriter()
     tracer = Tracer()
     tracer.writer = writer
 
-    @tracer.wrap('decorated_function', service='s', resource='r',
-            span_type='t')
+    @tracer.wrap("decorated_function", service="s", resource="r", span_type="t")
     def f(tag_name, tag_value):
         # make sure we can still set tags
         span = tracer.current_span()
         span.set_tag(tag_name, tag_value)
-    f('a', 'b')
+
+    f("a", "b")
 
     spans = writer.pop()
     eq_(len(spans), 1)
     s = spans[0]
-    eq_(s.name, 'decorated_function')
-    eq_(s.service, 's')
-    eq_(s.resource, 'r')
-    eq_(s.span_type, 't')
-    eq_(s.to_dict()['meta']['a'], 'b')
+    eq_(s.name, "decorated_function")
+    eq_(s.service, "s")
+    eq_(s.resource, "r")
+    eq_(s.span_type, "t")
+    eq_(s.to_dict()["meta"]["a"], "b")
+
 
 def test_tracer_wrap_default_name():
     writer = DummyWriter()
@@ -123,9 +128,11 @@ def test_tracer_wrap_default_name():
     @tracer.wrap()
     def f():
         pass
+
     f()
 
-    eq_(writer.spans[0].name, 'tests.test_tracer.f')
+    eq_(writer.spans[0].name, "tests.test_tracer.f")
+
 
 def test_tracer_wrap_exception():
     writer = DummyWriter()
@@ -134,12 +141,13 @@ def test_tracer_wrap_exception():
 
     @tracer.wrap()
     def f():
-        raise Exception('bim')
+        raise Exception("bim")
 
     assert_raises(Exception, f)
 
     eq_(len(writer.spans), 1)
     eq_(writer.spans[0].error, 1)
+
 
 def test_tracer_wrap_multiple_calls():
     # Make sure that we create a new span each time the function is called
@@ -150,6 +158,7 @@ def test_tracer_wrap_multiple_calls():
     @tracer.wrap()
     def f():
         pass
+
     f()
     f()
 
@@ -157,19 +166,22 @@ def test_tracer_wrap_multiple_calls():
     eq_(len(spans), 2)
     assert spans[0].span_id != spans[1].span_id
 
+
 def test_tracer_wrap_span_nesting():
     # Make sure that nested spans have the correct parents
     writer = DummyWriter()
     tracer = Tracer()
     tracer.writer = writer
 
-    @tracer.wrap('inner')
+    @tracer.wrap("inner")
     def inner():
         pass
-    @tracer.wrap('outer')
+
+    @tracer.wrap("outer")
     def outer():
-        with tracer.trace('mid'):
+        with tracer.trace("mid"):
             inner()
+
     outer()
 
     spans = writer.pop()
@@ -178,14 +190,14 @@ def test_tracer_wrap_span_nesting():
     # sift through the list so we're not dependent on span ordering within the
     # writer
     for span in spans:
-        if span.name == 'outer':
+        if span.name == "outer":
             outer_span = span
-        elif span.name == 'mid':
+        elif span.name == "mid":
             mid_span = span
-        elif span.name == 'inner':
+        elif span.name == "inner":
             inner_span = span
         else:
-            assert False, 'unknown span found'  # should never get here
+            assert False, "unknown span found"  # should never get here
 
     assert outer_span
     assert mid_span
@@ -195,13 +207,13 @@ def test_tracer_wrap_span_nesting():
     eq_(mid_span.parent_id, outer_span.span_id)
     eq_(inner_span.parent_id, mid_span.span_id)
 
+
 def test_tracer_wrap_class():
     writer = DummyWriter()
     tracer = Tracer()
     tracer.writer = writer
 
     class Foo(object):
-
         @staticmethod
         @tracer.wrap()
         def s():
@@ -234,10 +246,19 @@ def test_tracer_wrap_factory():
     tracer = Tracer()
     tracer.writer = writer
 
-    def wrap_executor(tracer, fn, args, kwargs, span_name=None, service=None, resource=None, span_type=None):
-        with tracer.trace('wrap.overwrite') as span:
-            span.set_tag('args', args)
-            span.set_tag('kwargs', kwargs)
+    def wrap_executor(
+        tracer,
+        fn,
+        args,
+        kwargs,
+        span_name=None,
+        service=None,
+        resource=None,
+        span_type=None,
+    ):
+        with tracer.trace("wrap.overwrite") as span:
+            span.set_tag("args", args)
+            span.set_tag("kwargs", kwargs)
             return fn(*args, **kwargs)
 
     @tracer.wrap()
@@ -250,9 +271,9 @@ def test_tracer_wrap_factory():
 
     # call the function expecting that the custom tracing wrapper is used
     wrapped_function(42, kw_param=42)
-    eq_(writer.spans[0].name, 'wrap.overwrite')
-    eq_(writer.spans[0].get_tag('args'), '(42,)')
-    eq_(writer.spans[0].get_tag('kwargs'), '{\'kw_param\': 42}')
+    eq_(writer.spans[0].name, "wrap.overwrite")
+    eq_(writer.spans[0].get_tag("args"), "(42,)")
+    eq_(writer.spans[0].get_tag("kwargs"), "{'kw_param': 42}")
 
 
 def test_tracer_wrap_factory_nested():
@@ -261,10 +282,19 @@ def test_tracer_wrap_factory_nested():
     tracer = Tracer()
     tracer.writer = writer
 
-    def wrap_executor(tracer, fn, args, kwargs, span_name=None, service=None, resource=None, span_type=None):
-        with tracer.trace('wrap.overwrite') as span:
-            span.set_tag('args', args)
-            span.set_tag('kwargs', kwargs)
+    def wrap_executor(
+        tracer,
+        fn,
+        args,
+        kwargs,
+        span_name=None,
+        service=None,
+        resource=None,
+        span_type=None,
+    ):
+        with tracer.trace("wrap.overwrite") as span:
+            span.set_tag("args", args)
+            span.set_tag("kwargs", kwargs)
             return fn(*args, **kwargs)
 
     @tracer.wrap()
@@ -276,16 +306,16 @@ def test_tracer_wrap_factory_nested():
     tracer.configure(wrap_executor=wrap_executor)
 
     # call the function expecting that the custom tracing wrapper is used
-    with tracer.trace('wrap.parent', service='webserver'):
+    with tracer.trace("wrap.parent", service="webserver"):
         wrapped_function(42, kw_param=42)
 
-    eq_(writer.spans[0].name, 'wrap.parent')
-    eq_(writer.spans[0].service, 'webserver')
+    eq_(writer.spans[0].name, "wrap.parent")
+    eq_(writer.spans[0].service, "webserver")
 
-    eq_(writer.spans[1].name, 'wrap.overwrite')
-    eq_(writer.spans[1].service, 'webserver')
-    eq_(writer.spans[1].get_tag('args'), '(42,)')
-    eq_(writer.spans[1].get_tag('kwargs'), '{\'kw_param\': 42}')
+    eq_(writer.spans[1].name, "wrap.overwrite")
+    eq_(writer.spans[1].service, "webserver")
+    eq_(writer.spans[1].get_tag("args"), "(42,)")
+    eq_(writer.spans[1].get_tag("kwargs"), "{'kw_param': 42}")
 
 
 def test_tracer_disabled():
@@ -304,6 +334,7 @@ def test_tracer_disabled():
         s.set_tag("a", "b")
     assert not writer.pop()
 
+
 def test_unserializable_span_with_finish():
     try:
         import numpy as np
@@ -317,8 +348,9 @@ def test_unserializable_span_with_finish():
     tracer.writer = writer
 
     with tracer.trace("parent") as span:
-        span.metrics['as'] = np.int64(1) # circumvent the data checks
+        span.metrics["as"] = np.int64(1)  # circumvent the data checks
         span.finish()
+
 
 def test_tracer_disabled_mem_leak():
     # ensure that if the tracer is disabled, we still remove things from the
@@ -336,33 +368,34 @@ def test_tracer_disabled_mem_leak():
     s2.finish()
     assert not p1, p1
 
+
 def test_tracer_global_tags():
     writer = DummyWriter()
     tracer = Tracer()
     tracer.writer = writer
 
-    s1 = tracer.trace('brie')
+    s1 = tracer.trace("brie")
     s1.finish()
-    assert not s1.get_tag('env')
-    assert not s1.get_tag('other')
+    assert not s1.get_tag("env")
+    assert not s1.get_tag("other")
 
-    tracer.set_tags({'env': 'prod'})
-    s2 = tracer.trace('camembert')
+    tracer.set_tags({"env": "prod"})
+    s2 = tracer.trace("camembert")
     s2.finish()
-    assert s2.get_tag('env') == 'prod'
-    assert not s2.get_tag('other')
+    assert s2.get_tag("env") == "prod"
+    assert not s2.get_tag("other")
 
-    tracer.set_tags({'env': 'staging', 'other': 'tag'})
-    s3 = tracer.trace('gruyere')
+    tracer.set_tags({"env": "staging", "other": "tag"})
+    s3 = tracer.trace("gruyere")
     s3.finish()
-    assert s3.get_tag('env') == 'staging'
-    assert s3.get_tag('other') == 'tag'
+    assert s3.get_tag("env") == "staging"
+    assert s3.get_tag("other") == "tag"
 
 
 def test_global_context():
     # the tracer uses a global thread-local Context
     tracer = get_dummy_tracer()
-    span = tracer.trace('fake_span')
+    span = tracer.trace("fake_span")
     ctx = tracer.get_call_context()
     eq_(1, len(ctx._trace))
     eq_(span, ctx._trace[0])
@@ -371,7 +404,7 @@ def test_global_context():
 def test_tracer_current_span():
     # the current span is in the local Context()
     tracer = get_dummy_tracer()
-    span = tracer.trace('fake_span')
+    span = tracer.trace("fake_span")
     eq_(span, tracer.current_span())
 
 
@@ -390,7 +423,7 @@ def test_default_provider_set():
     tracer = get_dummy_tracer()
     ctx = Context(trace_id=42, span_id=100)
     tracer.context_provider.activate(ctx)
-    span = tracer.trace('web.request')
+    span = tracer.trace("web.request")
     eq_(span.trace_id, 42)
     eq_(span.parent_id, 100)
 
@@ -399,7 +432,7 @@ def test_default_provider_trace():
     # Context handled by a default provider must be used
     # when creating a trace
     tracer = get_dummy_tracer()
-    span = tracer.trace('web.request')
+    span = tracer.trace("web.request")
     ctx = tracer.context_provider.active()
     eq_(len(ctx._trace), 1)
     eq_(span._context, ctx)
@@ -408,8 +441,8 @@ def test_default_provider_trace():
 def test_start_span():
     # it should create a root Span
     tracer = get_dummy_tracer()
-    span = tracer.start_span('web.request')
-    eq_('web.request', span.name)
+    span = tracer.start_span("web.request")
+    eq_("web.request", span.name)
     eq_(tracer, span._tracer)
     ok_(span._parent is None)
     ok_(span.parent_id is None)
@@ -420,19 +453,21 @@ def test_start_span():
 def test_start_span_optional():
     # it should create a root Span with arguments
     tracer = get_dummy_tracer()
-    span = tracer.start_span('web.request', service='web', resource='/', span_type='http')
-    eq_('web.request', span.name)
-    eq_('web', span.service)
-    eq_('/', span.resource)
-    eq_('http', span.span_type)
+    span = tracer.start_span(
+        "web.request", service="web", resource="/", span_type="http"
+    )
+    eq_("web.request", span.name)
+    eq_("web", span.service)
+    eq_("/", span.resource)
+    eq_("http", span.span_type)
 
 
 def test_start_child_span():
     # it should create a child Span for the given parent
     tracer = get_dummy_tracer()
-    parent = tracer.start_span('web.request')
-    child = tracer.start_span('web.worker', child_of=parent)
-    eq_('web.worker', child.name)
+    parent = tracer.start_span("web.request")
+    child = tracer.start_span("web.worker", child_of=parent)
+    eq_("web.worker", child.name)
     eq_(tracer, child._tracer)
     eq_(parent, child._parent)
     eq_(parent.span_id, child.parent_id)
@@ -444,19 +479,21 @@ def test_start_child_span():
 def test_start_child_span_attributes():
     # it should create a child Span with parent's attributes
     tracer = get_dummy_tracer()
-    parent = tracer.start_span('web.request', service='web', resource='/', span_type='http')
-    child = tracer.start_span('web.worker', child_of=parent)
-    eq_('web.worker', child.name)
-    eq_('web', child.service)
+    parent = tracer.start_span(
+        "web.request", service="web", resource="/", span_type="http"
+    )
+    child = tracer.start_span("web.worker", child_of=parent)
+    eq_("web.worker", child.name)
+    eq_("web", child.service)
 
 
 def test_start_child_from_context():
     # it should create a child span with a populated Context
     tracer = get_dummy_tracer()
-    root = tracer.start_span('web.request')
+    root = tracer.start_span("web.request")
     context = root.context
-    child = tracer.start_span('web.worker', child_of=context)
-    eq_('web.worker', child.name)
+    child = tracer.start_span("web.worker", child_of=context)
+    eq_("web.worker", child.name)
     eq_(tracer, child._tracer)
     eq_(root, child._parent)
     eq_(root.span_id, child.parent_id)

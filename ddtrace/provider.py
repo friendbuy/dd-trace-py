@@ -10,6 +10,7 @@ class BaseContextProvider(object):
         * the ``active`` method, that returns the current active ``Context``
         * the ``activate`` method, that sets the current active ``Context``
     """
+
     def activate(self, context):
         raise NotImplementedError
 
@@ -29,6 +30,7 @@ class DefaultContextProvider(BaseContextProvider):
     thread-local storage. It is suitable for synchronous programming and
     Python WSGI frameworks.
     """
+
     def __init__(self):
         self._local = ThreadLocalContext()
 

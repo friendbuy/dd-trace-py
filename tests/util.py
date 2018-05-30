@@ -36,17 +36,18 @@ class FakeTime(object):
 
 def patch_time():
     """Patch time.time with FakeTime"""
-    return mock.patch('time.time', new_callable=FakeTime)
+    return mock.patch("time.time", new_callable=FakeTime)
 
 
 def assert_dict_issuperset(a, b):
-    ok_(set(a.items()).issuperset(set(b.items())),
-            msg="{a} is not a superset of {b}".format(a=a, b=b))
+    ok_(
+        set(a.items()).issuperset(set(b.items())),
+        msg="{a} is not a superset of {b}".format(a=a, b=b),
+    )
 
 
 def assert_list_issuperset(a, b):
-    ok_(set(a).issuperset(set(b)),
-            msg="{a} is not a superset of {b}".format(a=a, b=b))
+    ok_(set(a).issuperset(set(b)), msg="{a} is not a superset of {b}".format(a=a, b=b))
 
 
 @contextmanager
@@ -93,10 +94,10 @@ def inject_sitecustomize(path):
     # required otherwise `ddtrace` scripts are not found when `env` kwarg is
     # passed
     env = os.environ.copy()
-    sitecustomize = os.path.join(root_folder, '..', path)
+    sitecustomize = os.path.join(root_folder, "..", path)
 
     # Add `boostrap` module so that `sitecustomize.py` is at the bottom
     # of the PYTHONPATH
     python_path = list(sys.path) + [sitecustomize]
-    env['PYTHONPATH'] = ':'.join(python_path)[1:]
+    env["PYTHONPATH"] = ":".join(python_path)[1:]
     return env

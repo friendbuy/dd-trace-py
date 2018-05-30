@@ -6,11 +6,11 @@ from .deprecation import deprecated
 
 def unwrap(obj, attr):
     f = getattr(obj, attr, None)
-    if f and isinstance(f, wrapt.ObjectProxy) and hasattr(f, '__wrapped__'):
+    if f and isinstance(f, wrapt.ObjectProxy) and hasattr(f, "__wrapped__"):
         setattr(obj, attr, f.__wrapped__)
 
 
-@deprecated('`wrapt` library is used instead', version='1.0.0')
+@deprecated("`wrapt` library is used instead", version="1.0.0")
 def safe_patch(patchable, key, patch_func, service, meta, tracer):
     """ takes patch_func (signature: takes the orig_method that is
     wrapped in the monkey patch == UNBOUND + service and meta) and
@@ -31,9 +31,10 @@ def safe_patch(patchable, key, patch_func, service, meta, tracer):
       the original unpatched method we wish to trace.
 
     """
+
     def _get_original_method(thing, key):
         orig = None
-        if hasattr(thing, '_dogtraced'):
+        if hasattr(thing, "_dogtraced"):
             # Search for original method
             orig = getattr(thing, "__dd_orig_{}".format(key), None)
         else:
@@ -48,7 +49,7 @@ def safe_patch(patchable, key, patch_func, service, meta, tracer):
         if not orig:
             # Should never happen
             return
-    elif hasattr(patchable, '__class__'):
+    elif hasattr(patchable, "__class__"):
         orig = _get_original_method(patchable.__class__, key)
         if not orig:
             # Should never happen
@@ -60,6 +61,5 @@ def safe_patch(patchable, key, patch_func, service, meta, tracer):
 
     if inspect.isclass(patchable) or inspect.ismodule(patchable):
         setattr(patchable, key, dest)
-    elif hasattr(patchable, '__class__'):
+    elif hasattr(patchable, "__class__"):
         setattr(patchable, key, dest.__get__(patchable, patchable.__class__))
-

@@ -22,20 +22,21 @@ class ElasticsearchTest(unittest.TestCase):
     Elasticsearch integration test suite.
     Need a running ElasticSearch
     """
-    ES_INDEX = 'ddtrace_index'
-    ES_TYPE = 'ddtrace_type'
 
-    TEST_SERVICE = 'test'
-    TEST_PORT = str(ELASTICSEARCH_CONFIG['port'])
+    ES_INDEX = "ddtrace_index"
+    ES_TYPE = "ddtrace_type"
+
+    TEST_SERVICE = "test"
+    TEST_PORT = str(ELASTICSEARCH_CONFIG["port"])
 
     def setUp(self):
         """Prepare ES"""
-        es = Elasticsearch(port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(port=ELASTICSEARCH_CONFIG["port"])
         es.indices.delete(index=self.ES_INDEX, ignore=[400, 404])
 
     def tearDown(self):
         """Clean ES"""
-        es = Elasticsearch(port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(port=ELASTICSEARCH_CONFIG["port"])
         es.indices.delete(index=self.ES_INDEX, ignore=[400, 404])
 
     def test_elasticsearch(self):
@@ -46,13 +47,19 @@ class ElasticsearchTest(unittest.TestCase):
         tracer = get_dummy_tracer()
         writer = tracer.writer
         transport_class = get_traced_transport(
-                datadog_tracer=tracer,
-                datadog_service=self.TEST_SERVICE)
+            datadog_tracer=tracer, datadog_service=self.TEST_SERVICE
+        )
 
-        es = Elasticsearch(transport_class=transport_class, port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(
+            transport_class=transport_class, port=ELASTICSEARCH_CONFIG["port"]
+        )
 
         # Test index creation
-        mapping = {"mapping": {"properties": {"created": {"type":"date", "format": "yyyy-MM-dd"}}}}
+        mapping = {
+            "mapping": {
+                "properties": {"created": {"type": "date", "format": "yyyy-MM-dd"}}
+            }
+        }
         es.indices.create(index=self.ES_INDEX, ignore=400, body=mapping)
 
         spans = writer.pop()
@@ -68,10 +75,16 @@ class ElasticsearchTest(unittest.TestCase):
         eq_(span.resource, "PUT /%s" % self.ES_INDEX)
 
         # Put data
-        args = {'index':self.ES_INDEX, 'doc_type':self.ES_TYPE}
-        es.index(id=10, body={'name': 'ten', 'created': datetime.date(2016, 1, 1)}, **args)
-        es.index(id=11, body={'name': 'eleven', 'created': datetime.date(2016, 2, 1)}, **args)
-        es.index(id=12, body={'name': 'twelve', 'created': datetime.date(2016, 3, 1)}, **args)
+        args = {"index": self.ES_INDEX, "doc_type": self.ES_TYPE}
+        es.index(
+            id=10, body={"name": "ten", "created": datetime.date(2016, 1, 1)}, **args
+        )
+        es.index(
+            id=11, body={"name": "eleven", "created": datetime.date(2016, 2, 1)}, **args
+        )
+        es.index(
+            id=12, body={"name": "twelve", "created": datetime.date(2016, 3, 1)}, **args
+        )
 
         spans = writer.pop()
         assert spans
@@ -94,8 +107,9 @@ class ElasticsearchTest(unittest.TestCase):
         eq_(span.get_tag(metadata.URL), "/%s/_refresh" % self.ES_INDEX)
 
         # Search data
-        result = es.search(sort=['name:desc'], size=100,
-                body={"query":{"match_all":{}}}, **args)
+        result = es.search(
+            sort=["name:desc"], size=100, body={"query": {"match_all": {}}}, **args
+        )
 
         assert len(result["hits"]["hits"]) == 3, result
 
@@ -103,13 +117,16 @@ class ElasticsearchTest(unittest.TestCase):
         assert spans
         eq_(len(spans), 1)
         span = spans[0]
-        eq_(span.resource,
-                "GET /%s/%s/_search" % (self.ES_INDEX, self.ES_TYPE))
+        eq_(span.resource, "GET /%s/%s/_search" % (self.ES_INDEX, self.ES_TYPE))
         eq_(span.get_tag(metadata.METHOD), "GET")
-        eq_(span.get_tag(metadata.URL),
-                "/%s/%s/_search" % (self.ES_INDEX, self.ES_TYPE))
+        eq_(
+            span.get_tag(metadata.URL), "/%s/%s/_search" % (self.ES_INDEX, self.ES_TYPE)
+        )
         eq_(span.get_tag(metadata.BODY).replace(" ", ""), '{"query":{"match_all":{}}}')
-        eq_(set(span.get_tag(metadata.PARAMS).split('&')), {'sort=name%3Adesc', 'size=100'})
+        eq_(
+            set(span.get_tag(metadata.PARAMS).split("&")),
+            {"sort=name%3Adesc", "size=100"},
+        )
 
         self.assertTrue(span.get_metric(metadata.TOOK) > 0)
 
@@ -128,7 +145,7 @@ class ElasticsearchTest(unittest.TestCase):
             spans = writer.pop()
             assert spans
             span = spans[0]
-            eq_(span.get_tag(http.STATUS_CODE), u'404')
+            eq_(span.get_tag(http.STATUS_CODE), u"404")
 
         # Raise error 400, the index 10 is created twice
         try:
@@ -139,7 +156,7 @@ class ElasticsearchTest(unittest.TestCase):
             spans = writer.pop()
             assert spans
             span = spans[-1]
-            eq_(span.get_tag(http.STATUS_CODE), u'400')
+            eq_(span.get_tag(http.STATUS_CODE), u"400")
 
         # Drop the index, checking it won't raise exception on success or failure
         es.indices.delete(index=self.ES_INDEX, ignore=[400, 404])
@@ -153,22 +170,23 @@ class ElasticsearchPatchTest(unittest.TestCase):
     Test cases with patching.
     Will merge when patching will be the default/only way.
     """
-    ES_INDEX = 'ddtrace_index'
-    ES_TYPE = 'ddtrace_type'
 
-    TEST_SERVICE = 'test'
-    TEST_PORT = str(ELASTICSEARCH_CONFIG['port'])
+    ES_INDEX = "ddtrace_index"
+    ES_TYPE = "ddtrace_type"
+
+    TEST_SERVICE = "test"
+    TEST_PORT = str(ELASTICSEARCH_CONFIG["port"])
 
     def setUp(self):
         """Prepare ES"""
-        es = Elasticsearch(port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(port=ELASTICSEARCH_CONFIG["port"])
         es.indices.delete(index=self.ES_INDEX, ignore=[400, 404])
         patch()
 
     def tearDown(self):
         """Clean ES"""
         unpatch()
-        es = Elasticsearch(port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(port=ELASTICSEARCH_CONFIG["port"])
         es.indices.delete(index=self.ES_INDEX, ignore=[400, 404])
 
     def test_elasticsearch(self):
@@ -179,15 +197,18 @@ class ElasticsearchPatchTest(unittest.TestCase):
         """Test the elasticsearch integration with patching
 
         """
-        es = Elasticsearch(port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(port=ELASTICSEARCH_CONFIG["port"])
 
         tracer = get_dummy_tracer()
         writer = tracer.writer
         Pin(service=self.TEST_SERVICE, tracer=tracer).onto(es.transport)
 
-
         # Test index creation
-        mapping = {"mapping": {"properties": {"created": {"type":"date", "format": "yyyy-MM-dd"}}}}
+        mapping = {
+            "mapping": {
+                "properties": {"created": {"type": "date", "format": "yyyy-MM-dd"}}
+            }
+        }
         es.indices.create(index=self.ES_INDEX, ignore=400, body=mapping)
 
         spans = writer.pop()
@@ -203,10 +224,16 @@ class ElasticsearchPatchTest(unittest.TestCase):
         eq_(span.resource, "PUT /%s" % self.ES_INDEX)
 
         # Put data
-        args = {'index':self.ES_INDEX, 'doc_type':self.ES_TYPE}
-        es.index(id=10, body={'name': 'ten', 'created': datetime.date(2016, 1, 1)}, **args)
-        es.index(id=11, body={'name': 'eleven', 'created': datetime.date(2016, 2, 1)}, **args)
-        es.index(id=12, body={'name': 'twelve', 'created': datetime.date(2016, 3, 1)}, **args)
+        args = {"index": self.ES_INDEX, "doc_type": self.ES_TYPE}
+        es.index(
+            id=10, body={"name": "ten", "created": datetime.date(2016, 1, 1)}, **args
+        )
+        es.index(
+            id=11, body={"name": "eleven", "created": datetime.date(2016, 2, 1)}, **args
+        )
+        es.index(
+            id=12, body={"name": "twelve", "created": datetime.date(2016, 3, 1)}, **args
+        )
 
         spans = writer.pop()
         assert spans, spans
@@ -229,8 +256,9 @@ class ElasticsearchPatchTest(unittest.TestCase):
         eq_(span.get_tag(metadata.URL), "/%s/_refresh" % self.ES_INDEX)
 
         # Search data
-        result = es.search(sort=['name:desc'], size=100,
-                           body={"query":{"match_all":{}}}, **args)
+        result = es.search(
+            sort=["name:desc"], size=100, body={"query": {"match_all": {}}}, **args
+        )
 
         assert len(result["hits"]["hits"]) == 3, result
 
@@ -238,13 +266,16 @@ class ElasticsearchPatchTest(unittest.TestCase):
         assert spans, spans
         eq_(len(spans), 1)
         span = spans[0]
-        eq_(span.resource,
-            "GET /%s/%s/_search" % (self.ES_INDEX, self.ES_TYPE))
+        eq_(span.resource, "GET /%s/%s/_search" % (self.ES_INDEX, self.ES_TYPE))
         eq_(span.get_tag(metadata.METHOD), "GET")
-        eq_(span.get_tag(metadata.URL),
-            "/%s/%s/_search" % (self.ES_INDEX, self.ES_TYPE))
+        eq_(
+            span.get_tag(metadata.URL), "/%s/%s/_search" % (self.ES_INDEX, self.ES_TYPE)
+        )
         eq_(span.get_tag(metadata.BODY).replace(" ", ""), '{"query":{"match_all":{}}}')
-        eq_(set(span.get_tag(metadata.PARAMS).split('&')), {'sort=name%3Adesc', 'size=100'})
+        eq_(
+            set(span.get_tag(metadata.PARAMS).split("&")),
+            {"sort=name%3Adesc", "size=100"},
+        )
 
         self.assertTrue(span.get_metric(metadata.TOOK) > 0)
 
@@ -266,7 +297,7 @@ class ElasticsearchPatchTest(unittest.TestCase):
         patch()
         patch()
 
-        es = Elasticsearch(port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(port=ELASTICSEARCH_CONFIG["port"])
         Pin(service=self.TEST_SERVICE, tracer=tracer).onto(es.transport)
 
         # Test index creation
@@ -279,7 +310,7 @@ class ElasticsearchPatchTest(unittest.TestCase):
         # Test unpatch
         unpatch()
 
-        es = Elasticsearch(port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(port=ELASTICSEARCH_CONFIG["port"])
 
         # Test index creation
         es.indices.create(index=self.ES_INDEX, ignore=400)
@@ -290,7 +321,7 @@ class ElasticsearchPatchTest(unittest.TestCase):
         # Test patch again
         patch()
 
-        es = Elasticsearch(port=ELASTICSEARCH_CONFIG['port'])
+        es = Elasticsearch(port=ELASTICSEARCH_CONFIG["port"])
         Pin(service=self.TEST_SERVICE, tracer=tracer).onto(es.transport)
 
         # Test index creation

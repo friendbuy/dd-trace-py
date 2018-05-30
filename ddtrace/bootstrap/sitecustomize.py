@@ -30,21 +30,22 @@ EXTRA_PATCHED_MODULES = {
 
 
 def update_patched_modules():
-    for patch in os.environ.get("DATADOG_PATCH_MODULES", '').split(','):
-        if len(patch.split(':')) != 2:
+    for patch in os.environ.get("DATADOG_PATCH_MODULES", "").split(","):
+        if len(patch.split(":")) != 2:
             log.debug("skipping malformed patch instruction")
             continue
 
-        module, should_patch = patch.split(':')
-        if should_patch.lower() not in ['true', 'false']:
+        module, should_patch = patch.split(":")
+        if should_patch.lower() not in ["true", "false"]:
             log.debug("skipping malformed patch instruction for %s", module)
             continue
 
-        EXTRA_PATCHED_MODULES.update({module: should_patch.lower() == 'true'})
+        EXTRA_PATCHED_MODULES.update({module: should_patch.lower() == "true"})
 
 
 try:
     from ddtrace import tracer
+
     patch = True
 
     # Respect DATADOG_* environment variables in global tracer configuration
@@ -70,18 +71,20 @@ try:
     if opts:
         tracer.configure(**opts)
 
-    if not hasattr(sys, 'argv'):
-        sys.argv = ['']
+    if not hasattr(sys, "argv"):
+        sys.argv = [""]
 
     if patch:
         update_patched_modules()
-        from ddtrace import patch_all; patch_all(**EXTRA_PATCHED_MODULES) # noqa
+        from ddtrace import patch_all
+
+        patch_all(**EXTRA_PATCHED_MODULES)  # noqa
 
     debug = os.environ.get("DATADOG_TRACE_DEBUG")
     if debug and debug.lower() == "true":
         tracer.debug_logging = True
 
-    if 'DATADOG_ENV' in os.environ:
+    if "DATADOG_ENV" in os.environ:
         tracer.set_tags({"env": os.environ["DATADOG_ENV"]})
 
     # Ensure sitecustomize.py is properly called if available in application directories:
@@ -93,13 +96,13 @@ try:
     path.remove(bootstrap_dir)
 
     try:
-        (f, path, description) = imp.find_module('sitecustomize', path)
+        (f, path, description) = imp.find_module("sitecustomize", path)
     except ImportError:
         pass
     else:
         # `sitecustomize.py` found, load it
-        log.debug('sitecustomize from user found in: %s', path)
-        imp.load_module('sitecustomize', f, path, description)
+        log.debug("sitecustomize from user found in: %s", path)
+        imp.load_module("sitecustomize", f, path, description)
 
 
 except Exception as e:

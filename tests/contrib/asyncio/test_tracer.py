@@ -18,17 +18,18 @@ class TestAsyncioTracer(AsyncioTestCase):
     """Ensure that the tracer works with asynchronous executions within
     the same ``IOLoop``.
     """
+
     @mark_asyncio
     def test_get_call_context(self):
         # it should return the context attached to the current Task
         # or create a new one
         task = asyncio.Task.current_task()
-        ctx = getattr(task, '__datadog_context', None)
+        ctx = getattr(task, "__datadog_context", None)
         ok_(ctx is None)
         # get the context from the loop creates a new one that
         # is attached to the Task object
         ctx = self.tracer.get_call_context()
-        eq_(ctx, getattr(task, '__datadog_context', None))
+        eq_(ctx, getattr(task, "__datadog_context", None))
 
     @mark_asyncio
     def test_get_call_context_twice(self):
@@ -38,14 +39,14 @@ class TestAsyncioTracer(AsyncioTestCase):
     @mark_asyncio
     def test_trace_coroutine(self):
         # it should use the task context when invoked in a coroutine
-        with self.tracer.trace('coroutine') as span:
-            span.resource = 'base'
+        with self.tracer.trace("coroutine") as span:
+            span.resource = "base"
 
         traces = self.tracer.writer.pop_traces()
         eq_(1, len(traces))
         eq_(1, len(traces[0]))
-        eq_('coroutine', traces[0][0].name)
-        eq_('base', traces[0][0].resource)
+        eq_("coroutine", traces[0][0].name)
+        eq_("base", traces[0][0].resource)
 
     @mark_asyncio
     def test_trace_multiple_coroutines(self):
@@ -54,10 +55,10 @@ class TestAsyncioTracer(AsyncioTestCase):
         @asyncio.coroutine
         def coro():
             # another traced coroutine
-            with self.tracer.trace('coroutine_2'):
+            with self.tracer.trace("coroutine_2"):
                 return 42
 
-        with self.tracer.trace('coroutine_1'):
+        with self.tracer.trace("coroutine_1"):
             value = yield from coro()
 
         # the coroutine has been called correctly
@@ -66,8 +67,8 @@ class TestAsyncioTracer(AsyncioTestCase):
         traces = self.tracer.writer.pop_traces()
         eq_(1, len(traces))
         eq_(2, len(traces[0]))
-        eq_('coroutine_1', traces[0][0].name)
-        eq_('coroutine_2', traces[0][1].name)
+        eq_("coroutine_1", traces[0][0].name)
+        eq_("coroutine_2", traces[0][1].name)
         # the parenting is correct
         eq_(traces[0][0], traces[0][1]._parent)
         eq_(traces[0][0].trace_id, traces[0][1].trace_id)
@@ -94,8 +95,8 @@ class TestAsyncioTracer(AsyncioTestCase):
     def test_exception(self):
         @asyncio.coroutine
         def f1():
-            with self.tracer.trace('f1'):
-                raise Exception('f1 error')
+            with self.tracer.trace("f1"):
+                raise Exception("f1 error")
 
         with self.assertRaises(Exception):
             yield from f1()
@@ -105,19 +106,19 @@ class TestAsyncioTracer(AsyncioTestCase):
         eq_(1, len(spans))
         span = spans[0]
         eq_(1, span.error)
-        eq_('f1 error', span.get_tag('error.msg'))
-        ok_('Exception: f1 error' in span.get_tag('error.stack'))
+        eq_("f1 error", span.get_tag("error.msg"))
+        ok_("Exception: f1 error" in span.get_tag("error.stack"))
 
     @mark_asyncio
     def test_nested_exceptions(self):
         @asyncio.coroutine
         def f1():
-            with self.tracer.trace('f1'):
-                raise Exception('f1 error')
+            with self.tracer.trace("f1"):
+                raise Exception("f1 error")
 
         @asyncio.coroutine
         def f2():
-            with self.tracer.trace('f2'):
+            with self.tracer.trace("f2"):
                 yield from f1()
 
         with self.assertRaises(Exception):
@@ -128,26 +129,26 @@ class TestAsyncioTracer(AsyncioTestCase):
         spans = traces[0]
         eq_(2, len(spans))
         span = spans[0]
-        eq_('f2', span.name)
-        eq_(1, span.error) # f2 did not catch the exception
-        eq_('f1 error', span.get_tag('error.msg'))
-        ok_('Exception: f1 error' in span.get_tag('error.stack'))
+        eq_("f2", span.name)
+        eq_(1, span.error)  # f2 did not catch the exception
+        eq_("f1 error", span.get_tag("error.msg"))
+        ok_("Exception: f1 error" in span.get_tag("error.stack"))
         span = spans[1]
-        eq_('f1', span.name)
+        eq_("f1", span.name)
         eq_(1, span.error)
-        eq_('f1 error', span.get_tag('error.msg'))
-        ok_('Exception: f1 error' in span.get_tag('error.stack'))
+        eq_("f1 error", span.get_tag("error.msg"))
+        ok_("Exception: f1 error" in span.get_tag("error.stack"))
 
     @mark_asyncio
     def test_handled_nested_exceptions(self):
         @asyncio.coroutine
         def f1():
-            with self.tracer.trace('f1'):
-                raise Exception('f1 error')
+            with self.tracer.trace("f1"):
+                raise Exception("f1 error")
 
         @asyncio.coroutine
         def f2():
-            with self.tracer.trace('f2'):
+            with self.tracer.trace("f2"):
                 try:
                     yield from f1()
                 except Exception:
@@ -160,13 +161,13 @@ class TestAsyncioTracer(AsyncioTestCase):
         spans = traces[0]
         eq_(2, len(spans))
         span = spans[0]
-        eq_('f2', span.name)
-        eq_(0, span.error) # f2 caught the exception
+        eq_("f2", span.name)
+        eq_(0, span.error)  # f2 caught the exception
         span = spans[1]
-        eq_('f1', span.name)
+        eq_("f1", span.name)
         eq_(1, span.error)
-        eq_('f1 error', span.get_tag('error.msg'))
-        ok_('Exception: f1 error' in span.get_tag('error.stack'))
+        eq_("f1 error", span.get_tag("error.msg"))
+        ok_("Exception: f1 error" in span.get_tag("error.stack"))
 
     @mark_asyncio
     def test_trace_multiple_calls(self):
@@ -175,7 +176,7 @@ class TestAsyncioTracer(AsyncioTestCase):
         @asyncio.coroutine
         def coro():
             # another traced coroutine
-            with self.tracer.trace('coroutine'):
+            with self.tracer.trace("coroutine"):
                 yield from asyncio.sleep(0.01)
 
         futures = [asyncio.ensure_future(coro()) for x in range(10)]
@@ -185,11 +186,11 @@ class TestAsyncioTracer(AsyncioTestCase):
         traces = self.tracer.writer.pop_traces()
         eq_(10, len(traces))
         eq_(1, len(traces[0]))
-        eq_('coroutine', traces[0][0].name)
+        eq_("coroutine", traces[0][0].name)
 
     @mark_asyncio
     def test_wrapped_coroutine(self):
-        @self.tracer.wrap('f1')
+        @self.tracer.wrap("f1")
         @asyncio.coroutine
         def f1():
             yield from asyncio.sleep(0.25)
@@ -201,11 +202,12 @@ class TestAsyncioTracer(AsyncioTestCase):
         spans = traces[0]
         eq_(1, len(spans))
         span = spans[0]
-        ok_(span.duration > 0.25, msg='span.duration={}'.format(span.duration))
+        ok_(span.duration > 0.25, msg="span.duration={}".format(span.duration))
 
 
 class TestAsyncioPropagation(AsyncioTestCase):
     """Ensure that asyncio context propagation works between different tasks"""
+
     def setUp(self):
         # patch asyncio event loop
         super(TestAsyncioPropagation, self).setUp()
@@ -219,12 +221,12 @@ class TestAsyncioPropagation(AsyncioTestCase):
     @mark_asyncio
     def test_tasks_chaining(self):
         # ensures that the context is propagated between different tasks
-        @self.tracer.wrap('spawn_task')
+        @self.tracer.wrap("spawn_task")
         @asyncio.coroutine
         def coro_2():
             yield from asyncio.sleep(0.01)
 
-        @self.tracer.wrap('main_task')
+        @self.tracer.wrap("main_task")
         @asyncio.coroutine
         def coro_1():
             yield from asyncio.ensure_future(coro_2())
@@ -245,17 +247,17 @@ class TestAsyncioPropagation(AsyncioTestCase):
     def test_concurrent_chaining(self):
         # ensures that the context is correctly propagated when
         # concurrent tasks are created from a common tracing block
-        @self.tracer.wrap('f1')
+        @self.tracer.wrap("f1")
         @asyncio.coroutine
         def f1():
             yield from asyncio.sleep(0.01)
 
-        @self.tracer.wrap('f2')
+        @self.tracer.wrap("f2")
         @asyncio.coroutine
         def f2():
             yield from asyncio.sleep(0.01)
 
-        with self.tracer.trace('main_task'):
+        with self.tracer.trace("main_task"):
             yield from asyncio.gather(f1(), f2())
 
         traces = self.tracer.writer.pop_traces()
@@ -280,7 +282,7 @@ class TestAsyncioPropagation(AsyncioTestCase):
         ctx = Context(trace_id=100, span_id=101)
         set_call_context(task, ctx)
 
-        with self.tracer.trace('async_task'):
+        with self.tracer.trace("async_task"):
             yield from asyncio.sleep(0.01)
 
         traces = self.tracer.writer.pop_traces()
@@ -298,7 +300,7 @@ class TestAsyncioPropagation(AsyncioTestCase):
         ctx = Context(trace_id=100, span_id=101)
         self.tracer.context_provider.activate(ctx)
 
-        with self.tracer.trace('async_task'):
+        with self.tracer.trace("async_task"):
             yield from asyncio.sleep(0.01)
 
         traces = self.tracer.writer.pop_traces()

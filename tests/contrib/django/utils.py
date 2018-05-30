@@ -10,7 +10,10 @@ from ddtrace.contrib.django.conf import settings
 from ddtrace.contrib.django.db import patch_db, unpatch_db
 from ddtrace.contrib.django.cache import unpatch_cache
 from ddtrace.contrib.django.templates import unpatch_template
-from ddtrace.contrib.django.middleware import remove_exception_middleware, remove_trace_middleware
+from ddtrace.contrib.django.middleware import (
+    remove_exception_middleware,
+    remove_trace_middleware,
+)
 
 # testing
 from ...test_tracer import DummyWriter
@@ -28,6 +31,7 @@ class DjangoTraceTestCase(TestCase):
     properly reset after each run. The tracer is available in
     the ``self.tracer`` attribute.
     """
+
     def setUp(self):
         # assign the default tracer
         self.tracer = settings.TRACER
@@ -42,6 +46,7 @@ class DjangoTraceTestCase(TestCase):
         # empty the tracer spans from test operations
         self.tracer.writer.spans = []
         self.tracer.writer.pop_traces()
+
 
 class override_ddtrace_settings(object):
     def __init__(self, *args, **kwargs):
@@ -66,7 +71,7 @@ class override_ddtrace_settings(object):
             self.backup[name] = getattr(settings, name)
             setattr(settings, name, value)
         self.unpatch_all()
-        app = apps.get_app_config('datadog_django')
+        app = apps.get_app_config("datadog_django")
         app.ready()
 
     def disable(self):
@@ -74,12 +79,13 @@ class override_ddtrace_settings(object):
             setattr(settings, name, self.backup[name])
         self.unpatch_all()
         remove_exception_middleware()
-        app = apps.get_app_config('datadog_django')
+        app = apps.get_app_config("datadog_django")
         app.ready()
 
     def __call__(self, func):
         @wraps(func)
         def inner(*args, **kwargs):
-            with(self):
+            with (self):
                 return func(*args, **kwargs)
+
         return inner

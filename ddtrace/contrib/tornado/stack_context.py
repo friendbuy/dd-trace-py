@@ -19,6 +19,7 @@ class TracerStackContext(DefaultContextProvider):
     This implementation follows some suggestions provided here:
     https://github.com/tornadoweb/tornado/issues/1063
     """
+
     def __init__(self):
         super(TracerStackContext, self).__init__()
         self._active = True
@@ -48,8 +49,9 @@ class TracerStackContext(DefaultContextProvider):
 
         if final_contexts is not self.new_contexts:
             raise StackContextInconsistentError(
-                'stack_context inconsistency (may be caused by yield '
-                'within a "with TracerStackContext" block)')
+                "stack_context inconsistency (may be caused by yield "
+                'within a "with TracerStackContext" block)'
+            )
 
         # break the reference to allow faster GC on CPython
         self.new_contexts = None
@@ -64,7 +66,7 @@ class TracerStackContext(DefaultContextProvider):
         If used in a separated Thread, the `_state` thread-local storage is used to
         propagate the current Active context from the `MainThread`.
         """
-        io_loop = getattr(IOLoop._current, 'instance', None)
+        io_loop = getattr(IOLoop._current, "instance", None)
         if io_loop is None:
             # if a Tornado loop is not available, it means that this method
             # has been called from a synchronous code, so we can rely in a
@@ -83,7 +85,7 @@ class TracerStackContext(DefaultContextProvider):
         If used in a separated Thread, the `_state` thread-local storage is used to
         propagate the current Active context from the `MainThread`.
         """
-        io_loop = getattr(IOLoop._current, 'instance', None)
+        io_loop = getattr(IOLoop._current, "instance", None)
         if io_loop is None:
             # because we're outside of an asynchronous execution, we store
             # the current context in a thread-local storage

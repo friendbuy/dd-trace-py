@@ -14,6 +14,7 @@ class DjangoConnectionTest(DjangoTraceTestCase):
     """
     Ensures that database connections are properly traced
     """
+
     def test_connection(self):
         # trace a simple query
         start = time.time()
@@ -27,12 +28,12 @@ class DjangoConnectionTest(DjangoTraceTestCase):
         eq_(len(spans), 1)
 
         span = spans[0]
-        eq_(span.name, 'sqlite.query')
-        eq_(span.service, 'defaultdb')
-        eq_(span.span_type, 'sql')
-        eq_(span.get_tag('django.db.vendor'), 'sqlite')
-        eq_(span.get_tag('django.db.alias'), 'default')
-        eq_(span.get_tag('sql.query'), 'SELECT COUNT(*) AS "__count" FROM "auth_user"')
+        eq_(span.name, "sqlite.query")
+        eq_(span.service, "defaultdb")
+        eq_(span.span_type, "sql")
+        eq_(span.get_tag("django.db.vendor"), "sqlite")
+        eq_(span.get_tag("django.db.alias"), "default")
+        eq_(span.get_tag("sql.query"), 'SELECT COUNT(*) AS "__count" FROM "auth_user"')
         assert start < span.start < span.start + span.duration < end
 
     @override_ddtrace_settings(INSTRUMENT_DATABASE=False)
@@ -48,11 +49,11 @@ class DjangoConnectionTest(DjangoTraceTestCase):
     def test_should_append_database_prefix(self):
         # trace a simple query and check if the prefix is correctly
         # loaded from Django settings
-        settings.DEFAULT_DATABASE_PREFIX = 'my_prefix_db'
+        settings.DEFAULT_DATABASE_PREFIX = "my_prefix_db"
         User.objects.count()
 
         traces = self.tracer.writer.pop_traces()
         eq_(len(traces), 1)
         eq_(len(traces[0]), 1)
         span = traces[0][0]
-        eq_(span.service, 'my_prefix_db-defaultdb')
+        eq_(span.service, "my_prefix_db-defaultdb")

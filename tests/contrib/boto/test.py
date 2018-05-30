@@ -42,10 +42,10 @@ class BotoTest(unittest.TestCase):
         assert spans
         eq_(len(spans), 1)
         span = spans[0]
-        eq_(span.get_tag('aws.operation'), "DescribeInstances")
+        eq_(span.get_tag("aws.operation"), "DescribeInstances")
         eq_(span.get_tag(http.STATUS_CODE), "200")
         eq_(span.get_tag(http.METHOD), "POST")
-        eq_(span.get_tag('aws.region'), "us-west-2")
+        eq_(span.get_tag("aws.region"), "us-west-2")
 
         # Create an instance
         ec2.run_instances(21)
@@ -53,10 +53,10 @@ class BotoTest(unittest.TestCase):
         assert spans
         eq_(len(spans), 1)
         span = spans[0]
-        eq_(span.get_tag('aws.operation'), "RunInstances")
+        eq_(span.get_tag("aws.operation"), "RunInstances")
         eq_(span.get_tag(http.STATUS_CODE), "200")
         eq_(span.get_tag(http.METHOD), "POST")
-        eq_(span.get_tag('aws.region'), "us-west-2")
+        eq_(span.get_tag("aws.region"), "us-west-2")
         eq_(span.service, "test-boto-tracing.ec2")
         eq_(span.resource, "ec2.runinstances")
         eq_(span.name, "ec2.command")
@@ -75,7 +75,7 @@ class BotoTest(unittest.TestCase):
         span = spans[0]
         eq_(span.get_tag(http.STATUS_CODE), "200")
         eq_(span.get_tag(http.METHOD), "GET")
-        eq_(span.get_tag('aws.operation'), "get_all_buckets")
+        eq_(span.get_tag("aws.operation"), "get_all_buckets")
 
         # Create a bucket command
         s3.create_bucket("cheese")
@@ -85,8 +85,8 @@ class BotoTest(unittest.TestCase):
         span = spans[0]
         eq_(span.get_tag(http.STATUS_CODE), "200")
         eq_(span.get_tag(http.METHOD), "PUT")
-        eq_(span.get_tag('path'), '/')
-        eq_(span.get_tag('aws.operation'), "create_bucket")
+        eq_(span.get_tag("path"), "/")
+        eq_(span.get_tag("aws.operation"), "create_bucket")
 
         # Get the created bucket
         s3.get_bucket("cheese")
@@ -96,7 +96,7 @@ class BotoTest(unittest.TestCase):
         span = spans[0]
         eq_(span.get_tag(http.STATUS_CODE), "200")
         eq_(span.get_tag(http.METHOD), "HEAD")
-        eq_(span.get_tag('aws.operation'), "head_bucket")
+        eq_(span.get_tag("aws.operation"), "head_bucket")
         eq_(span.service, "test-boto-tracing.s3")
         eq_(span.resource, "s3.head")
         eq_(span.name, "s3.command")
@@ -155,14 +155,14 @@ class BotoTest(unittest.TestCase):
         span = spans[0]
         eq_(span.get_tag(http.STATUS_CODE), "200")
         eq_(span.get_tag(http.METHOD), "GET")
-        eq_(span.get_tag('aws.region'), "us-east-2")
-        eq_(span.get_tag('aws.operation'), "list_functions")
+        eq_(span.get_tag("aws.region"), "us-east-2")
+        eq_(span.get_tag("aws.operation"), "list_functions")
         eq_(span.service, "test-boto-tracing.lambda")
         eq_(span.resource, "lambda.get")
 
     @mock_sts
     def test_sts_client(self):
-        sts = boto.sts.connect_to_region('us-west-2')
+        sts = boto.sts.connect_to_region("us-west-2")
         tracer = get_dummy_tracer()
         writer = tracer.writer
         Pin(service=self.TEST_SERVICE, tracer=tracer).onto(sts)
@@ -172,19 +172,20 @@ class BotoTest(unittest.TestCase):
         spans = writer.pop()
         assert spans
         span = spans[0]
-        eq_(span.get_tag('aws.region'), 'us-west-2')
-        eq_(span.get_tag('aws.operation'), 'GetFederationToken')
+        eq_(span.get_tag("aws.region"), "us-west-2")
+        eq_(span.get_tag("aws.operation"), "GetFederationToken")
         eq_(span.service, "test-boto-tracing.sts")
         eq_(span.resource, "sts.getfederationtoken")
 
         # checking for protection on sts against security leak
-        eq_(span.get_tag('args.path'), None)
+        eq_(span.get_tag("args.path"), None)
 
     @skipUnless(
         False,
-    "Test to reproduce the case where args sent to patched function are None, can't be mocked: needs AWS crendentials")
+        "Test to reproduce the case where args sent to patched function are None, can't be mocked: needs AWS crendentials",
+    )
     def test_elasticache_client(self):
-        elasticache = boto.elasticache.connect_to_region('us-west-2')
+        elasticache = boto.elasticache.connect_to_region("us-west-2")
         tracer = get_dummy_tracer()
         writer = tracer.writer
         Pin(service=self.TEST_SERVICE, tracer=tracer).onto(elasticache)
@@ -194,6 +195,6 @@ class BotoTest(unittest.TestCase):
         spans = writer.pop()
         assert spans
         span = spans[0]
-        eq_(span.get_tag('aws.region'), 'us-west-2')
+        eq_(span.get_tag("aws.region"), "us-west-2")
         eq_(span.service, "test-boto-tracing.elasticache")
         eq_(span.resource, "elasticache")

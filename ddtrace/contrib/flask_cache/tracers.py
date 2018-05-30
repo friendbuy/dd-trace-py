@@ -30,11 +30,7 @@ def get_traced_cache(ddtracer, service=DEFAULT_SERVICE, meta=None):
     """
 
     # set the Tracer info
-    ddtracer.set_service_info(
-        app="flask",
-        app_type=AppTypes.cache,
-        service=service,
-    )
+    ddtracer.set_service_info(app="flask", app_type=AppTypes.cache, service=service)
 
     class TracedCache(Cache):
         """
@@ -42,6 +38,7 @@ def get_traced_cache(ddtracer, service=DEFAULT_SERVICE, meta=None):
             * get, set, add, delete, clear
             * all many_ operations
         """
+
         _datadog_tracer = ddtracer
         _datadog_service = service
         _datadog_meta = meta
@@ -52,9 +49,7 @@ def get_traced_cache(ddtracer, service=DEFAULT_SERVICE, meta=None):
             """
             # create a new span
             s = self._datadog_tracer.trace(
-                cmd,
-                span_type=TYPE,
-                service=self._datadog_service
+                cmd, span_type=TYPE, service=self._datadog_service
             )
             # set span tags
             s.set_tag(CACHE_BACKEND, self.config.get("CACHE_TYPE"))

@@ -9,8 +9,8 @@ log = logging.getLogger(__name__)
 
 # To set attributes on wrapt proxy objects use this prefix:
 # http://wrapt.readthedocs.io/en/latest/wrappers.html
-_DD_PIN_NAME = '_datadog_pin'
-_DD_PIN_PROXY_NAME = '_self_' + _DD_PIN_NAME
+_DD_PIN_NAME = "_datadog_pin"
+_DD_PIN_PROXY_NAME = "_self_" + _DD_PIN_NAME
 
 
 class Pin(object):
@@ -24,9 +24,20 @@ class Pin(object):
         >>> pin = Pin.override(conn, service="user-db")
         >>> conn = sqlite.connect("/tmp/image.db")
     """
-    __slots__ = ['app', 'app_type', 'tags', 'tracer', '_target', '_config', '_initialized']
 
-    def __init__(self, service, app=None, app_type=None, tags=None, tracer=None, _config=None):
+    __slots__ = [
+        "app",
+        "app_type",
+        "tags",
+        "tracer",
+        "_target",
+        "_config",
+        "_initialized",
+    ]
+
+    def __init__(
+        self, service, app=None, app_type=None, tags=None, tracer=None, _config=None
+    ):
         tracer = tracer or ddtrace.tracer
         self.app = app
         self.app_type = app_type
@@ -37,7 +48,7 @@ class Pin(object):
         # public API to access it is not the Pin class
         self._config = _config or {}
         # [Backward compatibility]: service argument updates the `Pin` config
-        self._config['service_name'] = service
+        self._config["service_name"] = service
         self._initialized = True
 
     @property
@@ -45,16 +56,23 @@ class Pin(object):
         """Backward compatibility: accessing to `pin.service` returns the underlying
         configuration value.
         """
-        return self._config['service_name']
+        return self._config["service_name"]
 
     def __setattr__(self, name, value):
-        if getattr(self, '_initialized', False) and name is not '_target':
-            raise AttributeError("can't mutate a pin, use override() or clone() instead")
+        if getattr(self, "_initialized", False) and name is not "_target":
+            raise AttributeError(
+                "can't mutate a pin, use override() or clone() instead"
+            )
         super(Pin, self).__setattr__(name, value)
 
     def __repr__(self):
         return "Pin(service=%s, app=%s, app_type=%s, tags=%s, tracer=%s)" % (
-            self.service, self.app, self.app_type, self.tags, self.tracer)
+            self.service,
+            self.app,
+            self.app_type,
+            self.tags,
+            self.tracer,
+        )
 
     @staticmethod
     def get_from(obj):
@@ -65,10 +83,12 @@ class Pin(object):
 
             >>> pin = Pin.get_from(conn)
         """
-        if hasattr(obj, '__getddpin__'):
+        if hasattr(obj, "__getddpin__"):
             return obj.__getddpin__()
 
-        pin_name = _DD_PIN_PROXY_NAME if isinstance(obj, wrapt.ObjectProxy) else _DD_PIN_NAME
+        pin_name = (
+            _DD_PIN_PROXY_NAME if isinstance(obj, wrapt.ObjectProxy) else _DD_PIN_NAME
+        )
         pin = getattr(obj, pin_name, None)
         # detect if the PIN has been inherited from a class
         if pin is not None and pin._target != id(obj):
@@ -77,7 +97,9 @@ class Pin(object):
         return pin
 
     @classmethod
-    def override(cls, obj, service=None, app=None, app_type=None, tags=None, tracer=None):
+    def override(
+        cls, obj, service=None, app=None, app_type=None, tags=None, tracer=None
+    ):
         """Override an object with the given attributes.
 
         That's the recommended way to customize an already instrumented client, without
@@ -95,11 +117,7 @@ class Pin(object):
             pin = Pin(service)
 
         pin.clone(
-            service=service,
-            app=app,
-            app_type=app_type,
-            tags=tags,
-            tracer=tracer,
+            service=service, app=app, app_type=app_type, tags=tags, tracer=tracer
         ).onto(obj)
 
     def enabled(self):
@@ -121,10 +139,14 @@ class Pin(object):
 
         # Actually patch it on the object.
         try:
-            if hasattr(obj, '__setddpin__'):
+            if hasattr(obj, "__setddpin__"):
                 return obj.__setddpin__(self)
 
-            pin_name = _DD_PIN_PROXY_NAME if isinstance(obj, wrapt.ObjectProxy) else _DD_PIN_NAME
+            pin_name = (
+                _DD_PIN_PROXY_NAME
+                if isinstance(obj, wrapt.ObjectProxy)
+                else _DD_PIN_NAME
+            )
 
             # set the target reference; any get_from, clones and retarget the new PIN
             self._target = id(obj)
@@ -157,7 +179,5 @@ class Pin(object):
 
     def _send(self):
         self.tracer.set_service_info(
-            service=self.service,
-            app=self.app,
-            app_type=self.app_type,
+            service=self.service, app=self.app, app_type=self.app_type
         )

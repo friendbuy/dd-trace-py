@@ -14,9 +14,7 @@ from .util import APP, WORKER_SERVICE, require_pin
 def patch_app(app, pin=None):
     """ patch_app will add tracing to a celery app """
     pin = pin or Pin(service=WORKER_SERVICE, app=APP, app_type=AppTypes.worker)
-    patch_methods = [
-        ('task', _app_task),
-    ]
+    patch_methods = [("task", _app_task)]
     for method_name, wrapper in patch_methods:
         # Get the original method
         method = getattr(app, method_name, None)
@@ -31,7 +29,7 @@ def patch_app(app, pin=None):
         setattr(app, method_name, wrapt.FunctionWrapper(method, wrapper))
 
     # patch the Task class if available
-    setattr(app, 'Task', patch_task(app.Task))
+    setattr(app, "Task", patch_task(app.Task))
 
     # Attach our pin to the app
     pin.onto(app)
@@ -40,9 +38,7 @@ def patch_app(app, pin=None):
 
 def unpatch_app(app):
     """ unpatch_app will remove tracing from a celery app """
-    patched_methods = [
-        'task',
-    ]
+    patched_methods = ["task"]
     for method_name in patched_methods:
         # Get the wrapped method
         wrapper = getattr(app, method_name, None)
@@ -57,7 +53,7 @@ def unpatch_app(app):
         setattr(app, method_name, wrapper.__wrapped__)
 
     # restore the original Task class
-    setattr(app, 'Task', unpatch_task(app.Task))
+    setattr(app, "Task", unpatch_task(app.Task))
     return app
 
 
@@ -67,8 +63,10 @@ def _app_task(pin, func, app, args, kwargs):
 
     # `app.task` is a decorator which may return a function wrapper
     if isinstance(task, types.FunctionType):
+
         def wrapper(func, instance, args, kwargs):
             return patch_task(func(*args, **kwargs), pin=pin)
+
         return wrapt.FunctionWrapper(task, wrapper)
 
     return patch_task(task, pin=pin)

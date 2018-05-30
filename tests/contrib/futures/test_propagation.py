@@ -15,6 +15,7 @@ class PropagationTestCase(TestCase):
     when the ``futures`` library is used, or when the
     ``concurrent`` module is available (Python 3 only)
     """
+
     def setUp(self):
         # instrument ``concurrent``
         patch()
@@ -30,11 +31,11 @@ class PropagationTestCase(TestCase):
         def fn():
             # an active context must be available
             ok_(self.tracer.context_provider.active() is not None)
-            with self.tracer.trace('executor.thread'):
+            with self.tracer.trace("executor.thread"):
                 return 42
 
         with override_global_tracer(self.tracer):
-            with self.tracer.trace('main.thread'):
+            with self.tracer.trace("main.thread"):
                 with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                     future = executor.submit(fn)
                     result = future.result()
@@ -48,8 +49,8 @@ class PropagationTestCase(TestCase):
         main = traces[0][0]
         executor = traces[0][1]
 
-        eq_(main.name, 'main.thread')
-        eq_(executor.name, 'executor.thread')
+        eq_(main.name, "main.thread")
+        eq_(executor.name, "executor.thread")
         ok_(executor._parent is main)
 
     def test_propagation_with_params(self):
@@ -58,17 +59,17 @@ class PropagationTestCase(TestCase):
         def fn(value, key=None):
             # an active context must be available
             ok_(self.tracer.context_provider.active() is not None)
-            with self.tracer.trace('executor.thread'):
+            with self.tracer.trace("executor.thread"):
                 return value, key
 
         with override_global_tracer(self.tracer):
-            with self.tracer.trace('main.thread'):
+            with self.tracer.trace("main.thread"):
                 with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-                    future = executor.submit(fn, 42, 'CheeseShop')
+                    future = executor.submit(fn, 42, "CheeseShop")
                     value, key = future.result()
                     # assert the right result
                     eq_(value, 42)
-                    eq_(key, 'CheeseShop')
+                    eq_(key, "CheeseShop")
 
         # the trace must be completed
         traces = self.tracer.writer.pop_traces()
@@ -77,8 +78,8 @@ class PropagationTestCase(TestCase):
         main = traces[0][0]
         executor = traces[0][1]
 
-        eq_(main.name, 'main.thread')
-        eq_(executor.name, 'executor.thread')
+        eq_(main.name, "main.thread")
+        eq_(executor.name, "executor.thread")
         ok_(executor._parent is main)
 
     def test_disabled_instrumentation(self):
@@ -88,11 +89,11 @@ class PropagationTestCase(TestCase):
         def fn():
             # an active context must be available
             ok_(self.tracer.context_provider.active() is not None)
-            with self.tracer.trace('executor.thread'):
+            with self.tracer.trace("executor.thread"):
                 return 42
 
         with override_global_tracer(self.tracer):
-            with self.tracer.trace('main.thread'):
+            with self.tracer.trace("main.thread"):
                 with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                     future = executor.submit(fn)
                     result = future.result()
@@ -107,8 +108,8 @@ class PropagationTestCase(TestCase):
         executor = traces[0][0]
         main = traces[1][0]
 
-        eq_(main.name, 'main.thread')
-        eq_(executor.name, 'executor.thread')
+        eq_(main.name, "main.thread")
+        eq_(executor.name, "executor.thread")
         ok_(main.parent_id is None)
         ok_(executor.parent_id is None)
 
@@ -117,11 +118,11 @@ class PropagationTestCase(TestCase):
         patch()
 
         def fn():
-            with self.tracer.trace('executor.thread'):
+            with self.tracer.trace("executor.thread"):
                 return 42
 
         with override_global_tracer(self.tracer):
-            with self.tracer.trace('main.thread'):
+            with self.tracer.trace("main.thread"):
                 with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                     future = executor.submit(fn)
                     result = future.result()
@@ -137,13 +138,13 @@ class PropagationTestCase(TestCase):
         # it must send the trace only when all threads are finished
 
         def fn():
-            with self.tracer.trace('executor.thread'):
+            with self.tracer.trace("executor.thread"):
                 # wait before returning
                 time.sleep(0.05)
                 return 42
 
         with override_global_tracer(self.tracer):
-            with self.tracer.trace('main.thread'):
+            with self.tracer.trace("main.thread"):
                 # don't wait for the execution
                 executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
                 future = executor.submit(fn)

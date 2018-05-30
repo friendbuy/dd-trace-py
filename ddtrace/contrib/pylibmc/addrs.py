@@ -9,6 +9,7 @@ try:
 except ImportError:
     pass
 
+
 def parse_addresses(addrs):
     if not translate_server_specs:
         return []

@@ -8,32 +8,33 @@ class FalconTestCase(object):
     to add new tests, add them here so that they're shared across manual
     and automatic instrumentation.
     """
+
     def test_falcon_service(self):
         services = self.tracer._services
-        expected_service = (self._service, 'falcon', 'web')
+        expected_service = (self._service, "falcon", "web")
 
         # ensure users set service name is in the services list
         ok_(self._service in services.keys())
         eq_(services[self._service], expected_service)
 
     def test_404(self):
-        out = self.simulate_get('/fake_endpoint')
+        out = self.simulate_get("/fake_endpoint")
         eq_(out.status_code, 404)
 
         traces = self.tracer.writer.pop_traces()
         eq_(len(traces), 1)
         eq_(len(traces[0]), 1)
         span = traces[0][0]
-        eq_(span.name, 'falcon.request')
+        eq_(span.name, "falcon.request")
         eq_(span.service, self._service)
-        eq_(span.resource, 'GET 404')
-        eq_(span.get_tag(httpx.STATUS_CODE), '404')
-        eq_(span.get_tag(httpx.URL), 'http://falconframework.org/fake_endpoint')
+        eq_(span.resource, "GET 404")
+        eq_(span.get_tag(httpx.STATUS_CODE), "404")
+        eq_(span.get_tag(httpx.URL), "http://falconframework.org/fake_endpoint")
         eq_(span.parent_id, None)
 
     def test_exception(self):
         try:
-            self.simulate_get('/exception')
+            self.simulate_get("/exception")
         except Exception:
             pass
         else:
@@ -43,87 +44,87 @@ class FalconTestCase(object):
         eq_(len(traces), 1)
         eq_(len(traces[0]), 1)
         span = traces[0][0]
-        eq_(span.name, 'falcon.request')
+        eq_(span.name, "falcon.request")
         eq_(span.service, self._service)
-        eq_(span.resource, 'GET tests.contrib.falcon.app.resources.ResourceException')
-        eq_(span.get_tag(httpx.STATUS_CODE), '500')
-        eq_(span.get_tag(httpx.URL), 'http://falconframework.org/exception')
+        eq_(span.resource, "GET tests.contrib.falcon.app.resources.ResourceException")
+        eq_(span.get_tag(httpx.STATUS_CODE), "500")
+        eq_(span.get_tag(httpx.URL), "http://falconframework.org/exception")
         eq_(span.parent_id, None)
 
     def test_200(self):
-        out = self.simulate_get('/200')
+        out = self.simulate_get("/200")
         eq_(out.status_code, 200)
-        eq_(out.content.decode('utf-8'), 'Success')
+        eq_(out.content.decode("utf-8"), "Success")
 
         traces = self.tracer.writer.pop_traces()
         eq_(len(traces), 1)
         eq_(len(traces[0]), 1)
         span = traces[0][0]
-        eq_(span.name, 'falcon.request')
+        eq_(span.name, "falcon.request")
         eq_(span.service, self._service)
-        eq_(span.resource, 'GET tests.contrib.falcon.app.resources.Resource200')
-        eq_(span.get_tag(httpx.STATUS_CODE), '200')
-        eq_(span.get_tag(httpx.URL), 'http://falconframework.org/200')
+        eq_(span.resource, "GET tests.contrib.falcon.app.resources.Resource200")
+        eq_(span.get_tag(httpx.STATUS_CODE), "200")
+        eq_(span.get_tag(httpx.URL), "http://falconframework.org/200")
         eq_(span.parent_id, None)
 
     def test_201(self):
-        out = self.simulate_post('/201')
+        out = self.simulate_post("/201")
         eq_(out.status_code, 201)
-        eq_(out.content.decode('utf-8'), 'Success')
+        eq_(out.content.decode("utf-8"), "Success")
 
         traces = self.tracer.writer.pop_traces()
         eq_(len(traces), 1)
         eq_(len(traces[0]), 1)
         span = traces[0][0]
-        eq_(span.name, 'falcon.request')
+        eq_(span.name, "falcon.request")
         eq_(span.service, self._service)
-        eq_(span.resource, 'POST tests.contrib.falcon.app.resources.Resource201')
-        eq_(span.get_tag(httpx.STATUS_CODE), '201')
-        eq_(span.get_tag(httpx.URL), 'http://falconframework.org/201')
+        eq_(span.resource, "POST tests.contrib.falcon.app.resources.Resource201")
+        eq_(span.get_tag(httpx.STATUS_CODE), "201")
+        eq_(span.get_tag(httpx.URL), "http://falconframework.org/201")
         eq_(span.parent_id, None)
 
     def test_500(self):
-        out = self.simulate_get('/500')
+        out = self.simulate_get("/500")
         eq_(out.status_code, 500)
-        eq_(out.content.decode('utf-8'), 'Failure')
+        eq_(out.content.decode("utf-8"), "Failure")
 
         traces = self.tracer.writer.pop_traces()
         eq_(len(traces), 1)
         eq_(len(traces[0]), 1)
         span = traces[0][0]
-        eq_(span.name, 'falcon.request')
+        eq_(span.name, "falcon.request")
         eq_(span.service, self._service)
-        eq_(span.resource, 'GET tests.contrib.falcon.app.resources.Resource500')
-        eq_(span.get_tag(httpx.STATUS_CODE), '500')
-        eq_(span.get_tag(httpx.URL), 'http://falconframework.org/500')
+        eq_(span.resource, "GET tests.contrib.falcon.app.resources.Resource500")
+        eq_(span.get_tag(httpx.STATUS_CODE), "500")
+        eq_(span.get_tag(httpx.URL), "http://falconframework.org/500")
         eq_(span.parent_id, None)
 
     def test_404_exception(self):
-        out = self.simulate_get('/not_found')
+        out = self.simulate_get("/not_found")
         eq_(out.status_code, 404)
 
         traces = self.tracer.writer.pop_traces()
         eq_(len(traces), 1)
         eq_(len(traces[0]), 1)
         span = traces[0][0]
-        eq_(span.name, 'falcon.request')
+        eq_(span.name, "falcon.request")
         eq_(span.service, self._service)
-        eq_(span.resource, 'GET tests.contrib.falcon.app.resources.ResourceNotFound')
-        eq_(span.get_tag(httpx.STATUS_CODE), '404')
-        eq_(span.get_tag(httpx.URL), 'http://falconframework.org/not_found')
+        eq_(span.resource, "GET tests.contrib.falcon.app.resources.ResourceNotFound")
+        eq_(span.get_tag(httpx.STATUS_CODE), "404")
+        eq_(span.get_tag(httpx.URL), "http://falconframework.org/not_found")
         eq_(span.parent_id, None)
 
     def test_404_exception_no_stacktracer(self):
         # it should not have the stacktrace when a 404 exception is raised
-        out = self.simulate_get('/not_found')
+        out = self.simulate_get("/not_found")
         eq_(out.status_code, 404)
 
         traces = self.tracer.writer.pop_traces()
         eq_(len(traces), 1)
         eq_(len(traces[0]), 1)
         span = traces[0][0]
-        eq_(span.name, 'falcon.request')
+        eq_(span.name, "falcon.request")
         eq_(span.service, self._service)
-        eq_(span.get_tag(httpx.STATUS_CODE), '404')
+        eq_(span.get_tag(httpx.STATUS_CODE), "404")
         ok_(span.get_tag(errx.ERROR_TYPE) is None)
         eq_(span.parent_id, None)

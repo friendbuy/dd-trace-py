@@ -49,7 +49,6 @@ def _wrap_create_engine(func, module, args, kwargs):
 
 
 class EngineTracer(object):
-
     def __init__(self, tracer, service, engine):
         self.tracer = tracer
         self.engine = engine
@@ -59,21 +58,17 @@ class EngineTracer(object):
 
         # set the service info.
         self.tracer.set_service_info(
-            service=self.service,
-            app=self.vendor,
-            app_type=sqlx.APP_TYPE)
+            service=self.service, app=self.vendor, app_type=sqlx.APP_TYPE
+        )
 
         # attach the PIN
         Pin(
-            app=self.vendor,
-            tracer=tracer,
-            service=self.service,
-            app_type=sqlx.APP_TYPE,
+            app=self.vendor, tracer=tracer, service=self.service, app_type=sqlx.APP_TYPE
         ).onto(engine)
 
-        listen(engine, 'before_cursor_execute', self._before_cur_exec)
-        listen(engine, 'after_cursor_execute', self._after_cur_exec)
-        listen(engine, 'dbapi_error', self._dbapi_error)
+        listen(engine, "before_cursor_execute", self._before_cur_exec)
+        listen(engine, "after_cursor_execute", self._after_cur_exec)
+        listen(engine, "dbapi_error", self._dbapi_error)
 
     def _before_cur_exec(self, conn, cursor, statement, *args):
         pin = Pin.get_from(self.engine)
@@ -82,10 +77,7 @@ class EngineTracer(object):
             return
 
         span = pin.tracer.trace(
-            self.name,
-            service=pin.service,
-            span_type=sqlx.TYPE,
-            resource=statement,
+            self.name, service=pin.service, span_type=sqlx.TYPE, resource=statement
         )
 
         if not _set_tags_from_url(span, conn.engine.url):
@@ -122,6 +114,7 @@ class EngineTracer(object):
         finally:
             span.finish()
 
+
 def _set_tags_from_url(span, url):
     """ set connection tags from the url. return true if successful. """
     if url.host:
@@ -133,14 +126,14 @@ def _set_tags_from_url(span, url):
 
     return bool(span.get_tag(netx.TARGET_HOST))
 
+
 def _set_tags_from_cursor(span, vendor, cursor):
     """ attempt to set db connection tags by introspecting the cursor. """
-    if 'postgres' == vendor:
-        if hasattr(cursor, 'connection') and hasattr(cursor.connection, 'dsn'):
-            dsn = getattr(cursor.connection, 'dsn', None)
+    if "postgres" == vendor:
+        if hasattr(cursor, "connection") and hasattr(cursor.connection, "dsn"):
+            dsn = getattr(cursor.connection, "dsn", None)
             if dsn:
                 d = sqlx.parse_pg_dsn(dsn)
                 span.set_tag(sqlx.DB, d.get("dbname"))
                 span.set_tag(netx.TARGET_HOST, d.get("host"))
                 span.set_tag(netx.TARGET_PORT, d.get("port"))
-

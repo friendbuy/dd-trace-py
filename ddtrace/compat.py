@@ -13,8 +13,10 @@ stringify = str
 if PY2:
     from urllib import urlencode
     import httplib
+
     stringify = unicode
     from Queue import Queue
+
     try:
         from cStringIO import StringIO
     except ImportError:
@@ -62,8 +64,8 @@ def to_unicode(s):
 
     # If the object has a `decode` method, then decode into `utf-8`
     #   e.g. Python 2 `str`, Python 2/3 `bytearray`, etc
-    if hasattr(s, 'decode'):
-        return s.decode('utf-8')
+    if hasattr(s, "decode"):
+        return s.decode("utf-8")
 
     # Always try to coerce the object into the `stringify` object we expect
     #   e.g. `to_unicode(1)`, `to_unicode(dict(key='value'))`
@@ -81,12 +83,12 @@ else:
 
 
 __all__ = [
-    'httplib',
-    'iteritems',
-    'PY2',
-    'Queue',
-    'stringify',
-    'StringIO',
-    'urlencode',
-    'parse',
+    "httplib",
+    "iteritems",
+    "PY2",
+    "Queue",
+    "stringify",
+    "StringIO",
+    "urlencode",
+    "parse",
 ]

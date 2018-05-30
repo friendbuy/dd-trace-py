@@ -7,7 +7,6 @@ from ...ext import AppTypes
 
 
 class TraceMiddleware(object):
-
     def __init__(self, tracer, service="falcon", distributed_tracing=False):
         # store tracing references
         self.tracer = tracer
@@ -16,9 +15,7 @@ class TraceMiddleware(object):
 
         # configure Falcon service
         self.tracer.set_service_info(
-            app='falcon',
-            app_type=AppTypes.web,
-            service=service,
+            app="falcon", app_type=AppTypes.web, service=service
         )
 
     def process_request(self, req, resp):
@@ -30,9 +27,7 @@ class TraceMiddleware(object):
             self.tracer.context_provider.activate(context)
 
         span = self.tracer.trace(
-            "falcon.request",
-            service=self.service,
-            span_type=httpx.TYPE,
+            "falcon.request", service=self.service, span_type=httpx.TYPE
         )
 
         span.set_tag(httpx.METHOD, req.method)
@@ -57,7 +52,7 @@ class TraceMiddleware(object):
         # to proper status codes, so we we have to try to infer them
         # here. See https://github.com/falconry/falcon/issues/606
         if resource is None:
-            status = '404'
+            status = "404"
             span.resource = "%s 404" % req.method
             span.set_tag(httpx.STATUS_CODE, status)
             span.finish()
@@ -80,7 +75,7 @@ class TraceMiddleware(object):
 
 
 def _is_404(err_type):
-    return 'HTTPNotFound' in err_type.__name__
+    return "HTTPNotFound" in err_type.__name__
 
 
 def _detect_and_set_status_error(err_type, span):
@@ -89,9 +84,9 @@ def _detect_and_set_status_error(err_type, span):
     """
     if not _is_404(err_type):
         span.set_traceback()
-        return '500'
+        return "500"
     elif _is_404(err_type):
-        return '404'
+        return "404"
 
 
 def _name(r):

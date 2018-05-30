@@ -10,13 +10,14 @@ from ddtrace import compat
 from ddtrace.contrib.bottle import TracePlugin
 
 
-SERVICE = 'bottle-app'
+SERVICE = "bottle-app"
 
 
 class TraceBottleDistributedTest(TestCase):
     """
     Ensures that Bottle is properly traced.
     """
+
     def setUp(self):
         # provide a dummy tracer
         self.tracer = get_dummy_tracer()
@@ -30,63 +31,67 @@ class TraceBottleDistributedTest(TestCase):
         ddtrace.tracer = self._original_tracer
 
     def _trace_app_distributed(self, tracer=None):
-        self.app.install(TracePlugin(service=SERVICE, tracer=tracer, distributed_tracing=True))
+        self.app.install(
+            TracePlugin(service=SERVICE, tracer=tracer, distributed_tracing=True)
+        )
         self.app = webtest.TestApp(self.app)
 
     def _trace_app_not_distributed(self, tracer=None):
-        self.app.install(TracePlugin(service=SERVICE, tracer=tracer, distributed_tracing=False))
+        self.app.install(
+            TracePlugin(service=SERVICE, tracer=tracer, distributed_tracing=False)
+        )
         self.app = webtest.TestApp(self.app)
 
     def test_distributed(self):
         # setup our test app
-        @self.app.route('/hi/<name>')
+        @self.app.route("/hi/<name>")
         def hi(name):
-            return 'hi %s' % name
+            return "hi %s" % name
+
         self._trace_app_distributed(self.tracer)
 
         # make a request
-        headers = {'x-datadog-trace-id': '123',
-                   'x-datadog-parent-id': '456'}
-        resp = self.app.get('/hi/dougie', headers=headers)
+        headers = {"x-datadog-trace-id": "123", "x-datadog-parent-id": "456"}
+        resp = self.app.get("/hi/dougie", headers=headers)
         eq_(resp.status_int, 200)
-        eq_(compat.to_unicode(resp.body), u'hi dougie')
+        eq_(compat.to_unicode(resp.body), u"hi dougie")
 
         # validate it's traced
         spans = self.tracer.writer.pop()
         eq_(len(spans), 1)
         s = spans[0]
-        eq_(s.name, 'bottle.request')
-        eq_(s.service, 'bottle-app')
-        eq_(s.resource, 'GET /hi/<name>')
-        eq_(s.get_tag('http.status_code'), '200')
-        eq_(s.get_tag('http.method'), 'GET')
+        eq_(s.name, "bottle.request")
+        eq_(s.service, "bottle-app")
+        eq_(s.resource, "GET /hi/<name>")
+        eq_(s.get_tag("http.status_code"), "200")
+        eq_(s.get_tag("http.method"), "GET")
         # check distributed headers
         eq_(123, s.trace_id)
         eq_(456, s.parent_id)
 
     def test_not_distributed(self):
         # setup our test app
-        @self.app.route('/hi/<name>')
+        @self.app.route("/hi/<name>")
         def hi(name):
-            return 'hi %s' % name
+            return "hi %s" % name
+
         self._trace_app_not_distributed(self.tracer)
 
         # make a request
-        headers = {'x-datadog-trace-id': '123',
-                   'x-datadog-parent-id': '456'}
-        resp = self.app.get('/hi/dougie', headers=headers)
+        headers = {"x-datadog-trace-id": "123", "x-datadog-parent-id": "456"}
+        resp = self.app.get("/hi/dougie", headers=headers)
         eq_(resp.status_int, 200)
-        eq_(compat.to_unicode(resp.body), u'hi dougie')
+        eq_(compat.to_unicode(resp.body), u"hi dougie")
 
         # validate it's traced
         spans = self.tracer.writer.pop()
         eq_(len(spans), 1)
         s = spans[0]
-        eq_(s.name, 'bottle.request')
-        eq_(s.service, 'bottle-app')
-        eq_(s.resource, 'GET /hi/<name>')
-        eq_(s.get_tag('http.status_code'), '200')
-        eq_(s.get_tag('http.method'), 'GET')
+        eq_(s.name, "bottle.request")
+        eq_(s.service, "bottle-app")
+        eq_(s.resource, "GET /hi/<name>")
+        eq_(s.get_tag("http.status_code"), "200")
+        eq_(s.get_tag("http.method"), "GET")
         # check distributed headers
         assert_not_equal(123, s.trace_id)
         assert_not_equal(456, s.parent_id)

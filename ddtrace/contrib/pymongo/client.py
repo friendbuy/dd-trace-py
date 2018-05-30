@@ -22,20 +22,15 @@ _MongoClient = pymongo.MongoClient
 log = logging.getLogger(__name__)
 
 
-@deprecated(message='Use patching instead (see the docs).', version='1.0.0')
+@deprecated(message="Use patching instead (see the docs).", version="1.0.0")
 def trace_mongo_client(client, tracer, service=mongox.TYPE):
-    tracer.set_service_info(
-        service=service,
-        app=mongox.TYPE,
-        app_type=AppTypes.db,
-    )
+    tracer.set_service_info(service=service, app=mongox.TYPE, app_type=AppTypes.db)
     traced_client = TracedMongoClient(client)
     ddtrace.Pin(service=service, tracer=tracer).onto(traced_client)
     return traced_client
 
 
 class TracedMongoClient(ObjectProxy):
-
     def __init__(self, client=None, *args, **kwargs):
         # To support the former trace_mongo_client interface, we have to keep this old interface
         # TODO(Benjamin): drop it in a later version
@@ -52,7 +47,9 @@ class TracedMongoClient(ObjectProxy):
         client._topology = TracedTopology(client._topology)
 
         # Default Pin
-        ddtrace.Pin(service=mongox.TYPE, app=mongox.TYPE, app_type=AppTypes.db).onto(self)
+        ddtrace.Pin(service=mongox.TYPE, app=mongox.TYPE, app_type=AppTypes.db).onto(
+            self
+        )
 
     def __setddpin__(self, pin):
         pin.onto(self._topology)
@@ -62,7 +59,6 @@ class TracedMongoClient(ObjectProxy):
 
 
 class TracedTopology(ObjectProxy):
-
     def __init__(self, topology):
         super(TracedTopology, self).__init__(topology)
 
@@ -76,7 +72,6 @@ class TracedTopology(ObjectProxy):
 
 
 class TracedServer(ObjectProxy):
-
     def __init__(self, server):
         super(TracedServer, self).__init__(server)
 
@@ -94,14 +89,12 @@ class TracedServer(ObjectProxy):
         # if we couldn't parse or shouldn't trace the message, just go.
         if not cmd or not pin or not pin.enabled():
             return self.__wrapped__.send_message_with_response(
-                operation,
-                *args,
-                **kwargs)
+                operation, *args, **kwargs
+            )
 
         with pin.tracer.trace(
-                "pymongo.cmd",
-                span_type=mongox.TYPE,
-                service=pin.service) as span:
+            "pymongo.cmd", span_type=mongox.TYPE, service=pin.service
+        ) as span:
 
             span.resource = _resource_from_cmd(cmd)
             span.set_tag(mongox.DB, cmd.db)
@@ -109,9 +102,8 @@ class TracedServer(ObjectProxy):
             span.set_tags(cmd.tags)
 
             result = self.__wrapped__.send_message_with_response(
-                operation,
-                *args,
-                **kwargs)
+                operation, *args, **kwargs
+            )
 
             if result and result.address:
                 _set_address_tags(span, result.address)
@@ -128,11 +120,10 @@ class TracedServer(ObjectProxy):
     @staticmethod
     def _is_query(op):
         # NOTE: _Query should alwyas have a spec field
-        return hasattr(op, 'spec')
+        return hasattr(op, "spec")
 
 
 class TracedSocket(ObjectProxy):
-
     def __init__(self, socket):
         super(TracedSocket, self).__init__(socket)
 
@@ -173,10 +164,7 @@ class TracedSocket(ObjectProxy):
 
     def __trace(self, cmd):
         pin = ddtrace.Pin.get_from(self)
-        s = pin.tracer.trace(
-            "pymongo.cmd",
-            span_type=mongox.TYPE,
-            service=pin.service)
+        s = pin.tracer.trace("pymongo.cmd", span_type=mongox.TYPE, service=pin.service)
 
         if cmd.db:
             s.set_tag(mongox.DB, cmd.db)
@@ -211,18 +199,20 @@ def normalize_filter(f=None):
                 out[k] = normalize_filter(v)
             else:
                 # NOTE: this shouldn't happen, but let's have a safeguard.
-                out[k] = '?'
+                out[k] = "?"
         return out
     else:
         # FIXME[matt] unexpected type. not sure this should ever happen, but at
         # least it won't crash.
         return {}
 
+
 def _set_address_tags(span, address):
     # the address is only set after the cursor is done.
     if address:
         span.set_tag(netx.TARGET_HOST, address[0])
         span.set_tag(netx.TARGET_PORT, address[1])
+
 
 def _resource_from_cmd(cmd):
     if cmd.query is not None:

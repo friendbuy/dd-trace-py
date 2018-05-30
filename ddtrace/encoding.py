@@ -10,8 +10,9 @@ try:
     from msgpack._packer import Packer  # noqa
     from msgpack._unpacker import unpack, unpackb, Unpacker  # noqa
     from msgpack._version import version
+
     # use_bin_type kwarg only exists since msgpack-python v0.4.0
-    MSGPACK_PARAMS = { 'use_bin_type': True } if version >= (0, 4, 0) else {}
+    MSGPACK_PARAMS = {"use_bin_type": True} if version >= (0, 4, 0) else {}
     MSGPACK_ENCODING = True
 except ImportError:
     # fallback to JSON
@@ -25,6 +26,7 @@ class Encoder(object):
     """
     Encoder interface that provides the logic to encode traces and service.
     """
+
     def __init__(self):
         """
         When extending the ``Encoder`` class, ``headers`` must be set because
@@ -32,7 +34,7 @@ class Encoder(object):
         need to know what is the right header to suggest the decoding format to the
         agent
         """
-        self.content_type = ''
+        self.content_type = ""
 
     def encode_traces(self, traces):
         """
@@ -65,8 +67,8 @@ class Encoder(object):
 class JSONEncoder(Encoder):
     def __init__(self):
         # TODO[manu]: add instructions about how users can switch to Msgpack
-        log.debug('using JSON encoder; application performance may be degraded')
-        self.content_type = 'application/json'
+        log.debug("using JSON encoder; application performance may be degraded")
+        self.content_type = "application/json"
 
     def _encode(self, obj):
         return json.dumps(obj)
@@ -74,11 +76,12 @@ class JSONEncoder(Encoder):
 
 class MsgpackEncoder(Encoder):
     def __init__(self):
-        log.debug('using Msgpack encoder')
-        self.content_type = 'application/msgpack'
+        log.debug("using Msgpack encoder")
+        self.content_type = "application/msgpack"
 
     def _encode(self, obj):
         return msgpack.packb(obj, **MSGPACK_PARAMS)
+
 
 def get_encoder():
     """

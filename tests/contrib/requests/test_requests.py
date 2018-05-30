@@ -13,20 +13,21 @@ from ...util import override_global_tracer
 from ...test_tracer import get_dummy_tracer
 
 # socket name comes from https://english.stackexchange.com/a/44048
-SOCKET = 'httpbin.org'
-URL_200 = 'http://{}/status/200'.format(SOCKET)
-URL_500 = 'http://{}/status/500'.format(SOCKET)
+SOCKET = "httpbin.org"
+URL_200 = "http://{}/status/200".format(SOCKET)
+URL_500 = "http://{}/status/500".format(SOCKET)
 
 
 class BaseRequestTestCase(unittest.TestCase):
     """Create a traced Session, patching during the setUp and
     unpatching after the tearDown
     """
+
     def setUp(self):
         patch()
         self.tracer = get_dummy_tracer()
         self.session = Session()
-        setattr(self.session, 'datadog_tracer', self.tracer)
+        setattr(self.session, "datadog_tracer", self.tracer)
 
     def tearDown(self):
         unpatch()
@@ -52,10 +53,10 @@ class TestRequests(BaseRequestTestCase):
     def test_args_kwargs(self):
         # ensure all valid combinations of args / kwargs work
         url = URL_200
-        method = 'GET'
+        method = "GET"
         inputs = [
-            ([], {'method': method, 'url': url}),
-            ([method], {'url': url}),
+            ([], {"method": method, "url": url}),
+            ([method], {"url": url}),
             ([method, url], {}),
         ]
 
@@ -67,8 +68,8 @@ class TestRequests(BaseRequestTestCase):
             spans = self.tracer.writer.pop()
             eq_(len(spans), 1)
             s = spans[0]
-            eq_(s.get_tag(http.METHOD), 'GET')
-            eq_(s.get_tag(http.STATUS_CODE), '200')
+            eq_(s.get_tag(http.METHOD), "GET")
+            eq_(s.get_tag(http.STATUS_CODE), "200")
 
     def test_untraced_request(self):
         # ensure the unpatch removes tracing
@@ -85,7 +86,7 @@ class TestRequests(BaseRequestTestCase):
         # ensure that double patch doesn't duplicate instrumentation
         patch()
         session = Session()
-        setattr(session, 'datadog_tracer', self.tracer)
+        setattr(session, "datadog_tracer", self.tracer)
 
         out = session.get(URL_200)
         eq_(out.status_code, 200)
@@ -99,8 +100,8 @@ class TestRequests(BaseRequestTestCase):
         spans = self.tracer.writer.pop()
         eq_(len(spans), 1)
         s = spans[0]
-        eq_(s.get_tag(http.METHOD), 'GET')
-        eq_(s.get_tag(http.STATUS_CODE), '200')
+        eq_(s.get_tag(http.METHOD), "GET")
+        eq_(s.get_tag(http.STATUS_CODE), "200")
         eq_(s.error, 0)
         eq_(s.span_type, http.TYPE)
 
@@ -114,8 +115,8 @@ class TestRequests(BaseRequestTestCase):
             spans = self.tracer.writer.pop()
             eq_(len(spans), 1)
             s = spans[0]
-            eq_(s.get_tag(http.METHOD), 'GET')
-            eq_(s.get_tag(http.STATUS_CODE), '200')
+            eq_(s.get_tag(http.METHOD), "GET")
+            eq_(s.get_tag(http.STATUS_CODE), "200")
             eq_(s.error, 0)
             eq_(s.span_type, http.TYPE)
 
@@ -126,13 +127,13 @@ class TestRequests(BaseRequestTestCase):
         spans = self.tracer.writer.pop()
         eq_(len(spans), 1)
         s = spans[0]
-        eq_(s.get_tag(http.METHOD), 'POST')
-        eq_(s.get_tag(http.STATUS_CODE), '500')
+        eq_(s.get_tag(http.METHOD), "POST")
+        eq_(s.get_tag(http.STATUS_CODE), "500")
         eq_(s.error, 1)
 
     def test_non_existant_url(self):
         try:
-            self.session.get('http://doesnotexist.google.com')
+            self.session.get("http://doesnotexist.google.com")
         except Exception:
             pass
         else:
@@ -141,7 +142,7 @@ class TestRequests(BaseRequestTestCase):
         spans = self.tracer.writer.pop()
         eq_(len(spans), 1)
         s = spans[0]
-        eq_(s.get_tag(http.METHOD), 'GET')
+        eq_(s.get_tag(http.METHOD), "GET")
         eq_(s.error, 1)
         assert "Failed to establish a new connection" in s.get_tag(errors.MSG)
         assert "Failed to establish a new connection" in s.get_tag(errors.STACK)
@@ -155,8 +156,8 @@ class TestRequests(BaseRequestTestCase):
         spans = self.tracer.writer.pop()
         eq_(len(spans), 1)
         s = spans[0]
-        eq_(s.get_tag(http.METHOD), 'GET')
-        eq_(s.get_tag(http.STATUS_CODE), '500')
+        eq_(s.get_tag(http.METHOD), "GET")
+        eq_(s.get_tag(http.STATUS_CODE), "500")
         eq_(s.error, 1)
 
     def test_default_service_name(self):
@@ -168,12 +169,12 @@ class TestRequests(BaseRequestTestCase):
         eq_(len(spans), 1)
         s = spans[0]
 
-        eq_(s.service, 'requests')
+        eq_(s.service, "requests")
 
     def test_user_set_service_name(self):
         # ensure a service name set by the user has precedence
         cfg = config.get_from(self.session)
-        cfg['service_name'] = 'clients'
+        cfg["service_name"] = "clients"
         out = self.session.get(URL_200)
         eq_(out.status_code, 200)
 
@@ -181,12 +182,12 @@ class TestRequests(BaseRequestTestCase):
         eq_(len(spans), 1)
         s = spans[0]
 
-        eq_(s.service, 'clients')
+        eq_(s.service, "clients")
 
     def test_parent_service_name_precedence(self):
         # ensure the parent service name has precedence if the value
         # is not set by the user
-        with self.tracer.trace('parent.span', service='web'):
+        with self.tracer.trace("parent.span", service="web"):
             out = self.session.get(URL_200)
             eq_(out.status_code, 200)
 
@@ -194,13 +195,13 @@ class TestRequests(BaseRequestTestCase):
         eq_(len(spans), 2)
         s = spans[1]
 
-        eq_(s.name, 'requests.request')
-        eq_(s.service, 'web')
+        eq_(s.name, "requests.request")
+        eq_(s.service, "web")
 
     def test_parent_without_service_name(self):
         # ensure the default value is used if the parent
         # doesn't have a service
-        with self.tracer.trace('parent.span'):
+        with self.tracer.trace("parent.span"):
             out = self.session.get(URL_200)
             eq_(out.status_code, 200)
 
@@ -208,15 +209,15 @@ class TestRequests(BaseRequestTestCase):
         eq_(len(spans), 2)
         s = spans[1]
 
-        eq_(s.name, 'requests.request')
-        eq_(s.service, 'requests')
+        eq_(s.name, "requests.request")
+        eq_(s.service, "requests")
 
     def test_user_service_name_precedence(self):
         # ensure the user service name takes precedence over
         # the parent Span
         cfg = config.get_from(self.session)
-        cfg['service_name'] = 'clients'
-        with self.tracer.trace('parent.span', service='web'):
+        cfg["service_name"] = "clients"
+        with self.tracer.trace("parent.span", service="web"):
             out = self.session.get(URL_200)
             eq_(out.status_code, 200)
 
@@ -224,14 +225,14 @@ class TestRequests(BaseRequestTestCase):
         eq_(len(spans), 2)
         s = spans[1]
 
-        eq_(s.name, 'requests.request')
-        eq_(s.service, 'clients')
+        eq_(s.name, "requests.request")
+        eq_(s.service, "clients")
 
     def test_split_by_domain(self):
         # ensure a service name is generated by the domain name
         # of the ongoing call
         cfg = config.get_from(self.session)
-        cfg['split_by_domain'] = True
+        cfg["split_by_domain"] = True
         out = self.session.get(URL_200)
         eq_(out.status_code, 200)
 
@@ -239,13 +240,13 @@ class TestRequests(BaseRequestTestCase):
         eq_(len(spans), 1)
         s = spans[0]
 
-        eq_(s.service, 'httpbin.org')
+        eq_(s.service, "httpbin.org")
 
     def test_split_by_domain_precedence(self):
         # ensure the split by domain has precedence all the time
         cfg = config.get_from(self.session)
-        cfg['split_by_domain'] = True
-        cfg['service_name'] = 'intake'
+        cfg["split_by_domain"] = True
+        cfg["service_name"] = "intake"
         out = self.session.get(URL_200)
         eq_(out.status_code, 200)
 
@@ -253,18 +254,18 @@ class TestRequests(BaseRequestTestCase):
         eq_(len(spans), 1)
         s = spans[0]
 
-        eq_(s.service, 'httpbin.org')
+        eq_(s.service, "httpbin.org")
 
     def test_split_by_domain_wrong(self):
         # ensure the split by domain doesn't crash in case of a wrong URL;
         # in that case, the default service name must be used
         cfg = config.get_from(self.session)
-        cfg['split_by_domain'] = True
+        cfg["split_by_domain"] = True
         with assert_raises(MissingSchema):
-            self.session.get('http:/some>thing')
+            self.session.get("http:/some>thing")
 
         spans = self.tracer.writer.pop()
         eq_(len(spans), 1)
         s = spans[0]
 
-        eq_(s.service, 'requests')
+        eq_(s.service, "requests")

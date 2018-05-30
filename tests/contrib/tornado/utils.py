@@ -12,6 +12,7 @@ class TornadoTestCase(AsyncHTTPTestCase):
     and unpatched before/after each test. A dummy tracer is provided
     in the `self.tracer` attribute.
     """
+
     def get_app(self):
         # patch Tornado and reload module app
         patch()
@@ -20,9 +21,9 @@ class TornadoTestCase(AsyncHTTPTestCase):
         # create a dummy tracer and a Tornado web application
         self.tracer = get_dummy_tracer()
         settings = self.get_settings()
-        trace_settings = settings.get('datadog_trace', {})
-        settings['datadog_trace'] = trace_settings
-        trace_settings['tracer'] = self.tracer
+        trace_settings = settings.get("datadog_trace", {})
+        settings["datadog_trace"] = trace_settings
+        trace_settings["tracer"] = self.tracer
         self.app = app.make_app(settings=settings)
         return self.app
 

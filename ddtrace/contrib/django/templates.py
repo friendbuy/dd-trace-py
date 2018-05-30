@@ -15,7 +15,8 @@ from django.template import Template
 
 log = logging.getLogger(__name__)
 
-RENDER_ATTR = '_datadog_original_render'
+RENDER_ATTR = "_datadog_original_render"
+
 
 def patch_template(tracer):
     """ will patch django's template rendering function to include timing
@@ -32,20 +33,23 @@ def patch_template(tracer):
     setattr(Template, RENDER_ATTR, Template.render)
 
     def traced_render(self, context):
-        with tracer.trace('django.template', span_type=http.TEMPLATE) as span:
+        with tracer.trace("django.template", span_type=http.TEMPLATE) as span:
             try:
                 return Template._datadog_original_render(self, context)
             finally:
-                template_name = self.name or getattr(context, 'template_name', None) or 'unknown'
+                template_name = (
+                    self.name or getattr(context, "template_name", None) or "unknown"
+                )
                 span.resource = template_name
-                span.set_tag('django.template_name', template_name)
+                span.set_tag("django.template_name", template_name)
 
     Template.render = traced_render
+
 
 def unpatch_template():
     render = getattr(Template, RENDER_ATTR, None)
     if render is None:
-        log.debug('nothing to do Template is already patched')
+        log.debug("nothing to do Template is already patched")
         return
     Template.render = render
     delattr(Template, RENDER_ATTR)

@@ -27,7 +27,8 @@ class Tracer(object):
         from ddtrace import tracer
         trace = tracer.trace("app.request", "web-server").finish()
     """
-    DEFAULT_HOSTNAME = 'localhost'
+
+    DEFAULT_HOSTNAME = "localhost"
     DEFAULT_PORT = 8126
 
     def __init__(self):
@@ -79,9 +80,17 @@ class Tracer(object):
         """Returns the current Tracer Context Provider"""
         return self._context_provider
 
-    def configure(self, enabled=None, hostname=None, port=None, sampler=None,
-                  context_provider=None, wrap_executor=None, priority_sampling=None,
-                  settings=None):
+    def configure(
+        self,
+        enabled=None,
+        hostname=None,
+        port=None,
+        sampler=None,
+        context_provider=None,
+        wrap_executor=None,
+        priority_sampling=None,
+        settings=None,
+    ):
         """
         Configure an existing Tracer the easy way.
         Allow to configure or reconfigure a Tracer instance.
@@ -105,7 +114,7 @@ class Tracer(object):
 
         filters = None
         if settings is not None:
-                filters = settings.get(FILTERS_KEY)
+            filters = settings.get(FILTERS_KEY)
 
         if sampler is not None:
             self.sampler = sampler
@@ -113,12 +122,16 @@ class Tracer(object):
         if priority_sampling:
             self.priority_sampler = RateByServiceSampler()
 
-        if hostname is not None or port is not None or filters is not None or \
-                priority_sampling is not None:
+        if (
+            hostname is not None
+            or port is not None
+            or filters is not None
+            or priority_sampling is not None
+        ):
             # Preserve hostname and port when overriding filters or priority sampling
             default_hostname = self.DEFAULT_HOSTNAME
             default_port = self.DEFAULT_PORT
-            if hasattr(self, 'writer') and hasattr(self.writer, 'api'):
+            if hasattr(self, "writer") and hasattr(self.writer, "api"):
                 default_hostname = self.writer.api.hostname
                 default_port = self.writer.api.port
             self.writer = AgentWriter(
@@ -134,7 +147,9 @@ class Tracer(object):
         if wrap_executor is not None:
             self._wrap_executor = wrap_executor
 
-    def start_span(self, name, child_of=None, service=None, resource=None, span_type=None):
+    def start_span(
+        self, name, child_of=None, service=None, resource=None, span_type=None
+    ):
         """
         Return a span that will trace an operation called `name`. This method allows
         parenting using the ``child_of`` kwarg. If it's missing, the newly created span is a
@@ -201,11 +216,7 @@ class Tracer(object):
         else:
             # this is the root span of a new trace
             span = Span(
-                self,
-                name,
-                service=service,
-                resource=resource,
-                span_type=span_type,
+                self, name, service=service, resource=resource, span_type=span_type
             )
 
             span.sampled = self.sampler.sample(span)
@@ -333,7 +344,12 @@ class Tracer(object):
             self._services[service] = info
 
             if self.debug_logging:
-                log.debug("set_service_info: service:%s app:%s type:%s", service, app, app_type)
+                log.debug(
+                    "set_service_info: service:%s app:%s type:%s",
+                    service,
+                    app,
+                    app_type,
+                )
 
             # If we had changes, send them to the writer.
             if self.enabled and self.writer:
@@ -341,7 +357,7 @@ class Tracer(object):
                 # translate to the form the server understands.
                 services = {}
                 for service, app, app_type in self._services.values():
-                    services[service] = {"app" : app, "app_type" : app_type}
+                    services[service] = {"app": app, "app_type": app_type}
 
                 # queue them for writes.
                 self.writer.write(services=services)
@@ -390,9 +406,10 @@ class Tracer(object):
                 span = tracer.current_span()
                 span.set_tag('a', 'b')
         """
+
         def wrap_decorator(f):
             # FIXME[matt] include the class name for methods.
-            span_name = name if name else '%s.%s' % (f.__module__, f.__name__)
+            span_name = name if name else "%s.%s" % (f.__module__, f.__name__)
 
             # detect if the the given function is a coroutine to use the
             # right decorator; this initial check ensures that the
@@ -403,20 +420,25 @@ class Tracer(object):
                 # code is used for compatibility reasons to prevent Syntax errors
                 # in Python 2
                 func_wrapper = compat.make_async_decorator(
-                    self, f, span_name,
+                    self,
+                    f,
+                    span_name,
                     service=service,
                     resource=resource,
                     span_type=span_type,
                 )
             else:
+
                 @functools.wraps(f)
                 def func_wrapper(*args, **kwargs):
                     # if a wrap executor has been configured, it is used instead
                     # of the default tracing function
-                    if getattr(self, '_wrap_executor', None):
+                    if getattr(self, "_wrap_executor", None):
                         return self._wrap_executor(
                             self,
-                            f, args, kwargs,
+                            f,
+                            args,
+                            kwargs,
                             span_name,
                             service=service,
                             resource=resource,
@@ -424,10 +446,16 @@ class Tracer(object):
                         )
 
                     # otherwise fallback to a default tracing
-                    with self.trace(span_name, service=service, resource=resource, span_type=span_type):
+                    with self.trace(
+                        span_name,
+                        service=service,
+                        resource=resource,
+                        span_type=span_type,
+                    ):
                         return f(*args, **kwargs)
 
             return func_wrapper
+
         return wrap_decorator
 
     def set_tags(self, tags):

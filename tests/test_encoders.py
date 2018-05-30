@@ -13,17 +13,22 @@ class TestEncoders(TestCase):
     """
     Ensures that Encoders serialize the payload as expected.
     """
+
     def test_encode_traces_json(self):
         # test encoding for JSON format
         traces = []
-        traces.append([
-            Span(name='client.testing', tracer=None),
-            Span(name='client.testing', tracer=None),
-        ])
-        traces.append([
-            Span(name='client.testing', tracer=None),
-            Span(name='client.testing', tracer=None),
-        ])
+        traces.append(
+            [
+                Span(name="client.testing", tracer=None),
+                Span(name="client.testing", tracer=None),
+            ]
+        )
+        traces.append(
+            [
+                Span(name="client.testing", tracer=None),
+                Span(name="client.testing", tracer=None),
+            ]
+        )
 
         encoder = JSONEncoder()
         spans = encoder.encode_traces(traces)
@@ -37,19 +42,23 @@ class TestEncoders(TestCase):
         eq_(len(items[1]), 2)
         for i in range(2):
             for j in range(2):
-                eq_('client.testing', items[i][j]['name'])
+                eq_("client.testing", items[i][j]["name"])
 
     def test_encode_traces_msgpack(self):
         # test encoding for MsgPack format
         traces = []
-        traces.append([
-            Span(name='client.testing', tracer=None),
-            Span(name='client.testing', tracer=None),
-        ])
-        traces.append([
-            Span(name='client.testing', tracer=None),
-            Span(name='client.testing', tracer=None),
-        ])
+        traces.append(
+            [
+                Span(name="client.testing", tracer=None),
+                Span(name="client.testing", tracer=None),
+            ]
+        )
+        traces.append(
+            [
+                Span(name="client.testing", tracer=None),
+                Span(name="client.testing", tracer=None),
+            ]
+        )
 
         encoder = MsgpackEncoder()
         spans = encoder.encode_traces(traces)
@@ -63,4 +72,4 @@ class TestEncoders(TestCase):
         eq_(len(items[1]), 2)
         for i in range(2):
             for j in range(2):
-                eq_(b'client.testing', items[i][j][b'name'])
+                eq_(b"client.testing", items[i][j][b"name"])

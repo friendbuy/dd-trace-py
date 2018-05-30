@@ -24,7 +24,9 @@ log = logging.getLogger(__name__)
 class TracedClient(ObjectProxy):
     """ TracedClient is a proxy for a pylibmc.Client that times it's network operations. """
 
-    def __init__(self, client=None, service=memcached.SERVICE, tracer=None, *args, **kwargs):
+    def __init__(
+        self, client=None, service=memcached.SERVICE, tracer=None, *args, **kwargs
+    ):
         """ Create a traced client that wraps the given memcached client.
 
         """
@@ -36,8 +38,10 @@ class TracedClient(ObjectProxy):
             # Note that, in that case, client isn't a real client (just the first argument)
             client = _Client(client, *args, **kwargs)
         else:
-            log.warning("TracedClient instantiation is deprecated and will be remove "
-                        "in future versions (0.6.0). Use patching instead (see the docs).")
+            log.warning(
+                "TracedClient instantiation is deprecated and will be remove "
+                "in future versions (0.6.0). Use patching instead (see the docs)."
+            )
 
         super(TracedClient, self).__init__(client)
 
@@ -53,9 +57,8 @@ class TracedClient(ObjectProxy):
         # attempt to set the service info
         try:
             pin.tracer.set_service_info(
-                service=service,
-                app=memcached.SERVICE,
-                app_type=memcached.TYPE)
+                service=service, app=memcached.SERVICE, app_type=memcached.TYPE
+            )
         except Exception:
             log.debug("error setting service info", exc_info=True)
 
@@ -124,7 +127,7 @@ class TracedClient(ObjectProxy):
         method = getattr(self.__wrapped__, method_name)
         with self._span(method_name) as span:
 
-            pre = kwargs.get('key_prefix')
+            pre = kwargs.get("key_prefix")
             if span and pre:
                 span.set_tag(memcached.QUERY, "%s %s" % (method_name, pre))
 
@@ -139,7 +142,8 @@ class TracedClient(ObjectProxy):
                 service=pin.service,
                 resource=cmd_name,
                 # TODO(Benjamin): set a better span type
-                span_type="cache")
+                span_type="cache",
+            )
 
             try:
                 self._tag_span(span)

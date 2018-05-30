@@ -22,8 +22,9 @@ LOG_ERR_INTERVAL = 60
 
 
 class AgentWriter(object):
-
-    def __init__(self, hostname='localhost', port=8126, filters=None, priority_sampler=None):
+    def __init__(
+        self, hostname="localhost", port=8126, filters=None, priority_sampler=None
+    ):
         self._pid = None
         self._traces = None
         self._services = None
@@ -66,9 +67,15 @@ class AgentWriter(object):
 
 
 class AsyncWorker(object):
-
-    def __init__(self, api, trace_queue, service_queue, shutdown_timeout=DEFAULT_TIMEOUT,
-                 filters=None, priority_sampler=None):
+    def __init__(
+        self,
+        api,
+        trace_queue,
+        service_queue,
+        shutdown_timeout=DEFAULT_TIMEOUT,
+        filters=None,
+        priority_sampler=None,
+    ):
         self._trace_queue = trace_queue
         self._service_queue = service_queue
         self._lock = threading.Lock()
@@ -118,9 +125,12 @@ class AsyncWorker(object):
 
             size = self._trace_queue.size()
             if size:
-                key = "ctrl-break" if os.name == 'nt' else 'ctrl-c'
-                log.debug("Waiting %ss for traces to be sent. Hit %s to quit.",
-                        self._shutdown_timeout, key)
+                key = "ctrl-break" if os.name == "nt" else "ctrl-c"
+                log.debug(
+                    "Waiting %ss for traces to be sent. Hit %s to quit.",
+                    self._shutdown_timeout,
+                    key,
+                )
                 timeout = time.time() + self._shutdown_timeout
                 while time.time() < timeout and self._trace_queue.size():
                     # FIXME[matt] replace with a queue join
@@ -144,14 +154,22 @@ class AsyncWorker(object):
                 try:
                     result_traces = self.api.send_traces(traces)
                 except Exception as err:
-                    log.error("cannot send spans to {1}:{2}: {0}".format(err, self.api.hostname, self.api.port))
+                    log.error(
+                        "cannot send spans to {1}:{2}: {0}".format(
+                            err, self.api.hostname, self.api.port
+                        )
+                    )
 
             services = self._service_queue.pop()
             if services:
                 try:
                     result_services = self.api.send_services(services)
                 except Exception as err:
-                    log.error("cannot send services to {1}:{2}: {0}".format(err, self.api.hostname, self.api.port))
+                    log.error(
+                        "cannot send services to {1}:{2}: {0}".format(
+                            err, self.api.hostname, self.api.port
+                        )
+                    )
 
             if self._trace_queue.closed() and self._trace_queue.size() == 0:
                 # no traces and the queue is closed. our work is done
@@ -159,8 +177,10 @@ class AsyncWorker(object):
 
             if self._priority_sampler:
                 result_traces_json = _parse_response_json(result_traces)
-                if result_traces_json and 'rate_by_service' in result_traces_json:
-                    self._priority_sampler.set_sample_rate_by_service(result_traces_json['rate_by_service'])
+                if result_traces_json and "rate_by_service" in result_traces_json:
+                    self._priority_sampler.set_sample_rate_by_service(
+                        result_traces_json["rate_by_service"]
+                    )
 
             self._log_error_status(result_traces, "traces")
             result_traces = None
@@ -176,9 +196,13 @@ class AsyncWorker(object):
             if now > self._last_error_ts + LOG_ERR_INTERVAL:
                 log_level = log.error
                 self._last_error_ts = now
-            log_level("failed_to_send %s to Agent: HTTP error status %s, reason %s, message %s", result_name,
-                      getattr(result, "status", None), getattr(result, "reason", None),
-                      getattr(result, "msg", None))
+            log_level(
+                "failed_to_send %s to Agent: HTTP error status %s, reason %s, message %s",
+                result_name,
+                getattr(result, "status", None),
+                getattr(result, "reason", None),
+                getattr(result, "msg", None),
+            )
 
     def _apply_filters(self, traces):
         """
@@ -204,6 +228,7 @@ class Q(object):
     Q is a threadsafe queue that let's you pop everything at once and
     will randomly overwrite elements when it's over the max size.
     """
+
     def __init__(self, max_size=1000):
         self._things = []
         self._lock = threading.Lock()

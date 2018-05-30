@@ -31,14 +31,14 @@ ddtrace.tracer.writer = None
 
 
 class KitchenSink(object):
-
     def __init__(self):
         self._redis = redis.Redis(**config.REDIS_CONFIG)
         self._pg = psycopg2.connect(**config.POSTGRES_CONFIG)
 
         url = "%s:%s" % (
             config.MEMCACHED_CONFIG["host"],
-            config.MEMCACHED_CONFIG["port"])
+            config.MEMCACHED_CONFIG["port"],
+        )
         self._pylibmc = pylibmc.Client([url])
 
     def ping(self, i):
@@ -65,7 +65,8 @@ class KitchenSink(object):
         self._pylibmc.incr("a", 2)
         self._pylibmc.decr("a", 1)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     k = KitchenSink()
     t = pympler.tracker.SummaryTracker()
     for i in itertools.count():

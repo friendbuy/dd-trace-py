@@ -16,6 +16,7 @@ class TracedGreenlet(gevent.Greenlet):
     through the ``patch()`` method. After the patch, extending the gevent
     ``Greenlet`` class means extending automatically ``TracedGreenlet``.
     """
+
     def __init__(self, *args, **kwargs):
         # get the current Context if available
         current_g = gevent.getcurrent()

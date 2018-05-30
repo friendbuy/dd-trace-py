@@ -32,7 +32,7 @@ patch ``gevent`` **before importing** the library::
 from ...utils.importlib import require_modules
 
 
-required_modules = ['gevent']
+required_modules = ["gevent"]
 
 with require_modules(required_modules) as missing_modules:
     if not missing_modules:
@@ -41,8 +41,4 @@ with require_modules(required_modules) as missing_modules:
 
         context_provider = GeventContextProvider()
 
-        __all__ = [
-            'patch',
-            'unpatch',
-            'context_provider',
-        ]
+        __all__ = ["patch", "unpatch", "context_provider"]

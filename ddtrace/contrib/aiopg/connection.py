@@ -14,8 +14,8 @@ class AIOTracedCursor(wrapt.ObjectProxy):
     def __init__(self, cursor, pin):
         super(AIOTracedCursor, self).__init__(cursor)
         pin.onto(self)
-        name = pin.app or 'sql'
-        self._datadog_name = '%s.query' % name
+        name = pin.app or "sql"
+        self._datadog_name = "%s.query" % name
 
     @asyncio.coroutine
     def _trace_method(self, method, resource, extra_tags, *args, **kwargs):
@@ -25,8 +25,9 @@ class AIOTracedCursor(wrapt.ObjectProxy):
             return result
         service = pin.service
 
-        with pin.tracer.trace(self._datadog_name, service=service,
-                              resource=resource) as s:
+        with pin.tracer.trace(
+            self._datadog_name, service=service, resource=resource
+        ) as s:
             s.span_type = sql.TYPE
             s.set_tag(sql.QUERY, resource)
             s.set_tags(pin.tags)
@@ -43,20 +44,27 @@ class AIOTracedCursor(wrapt.ObjectProxy):
         # FIXME[matt] properly handle kwargs here. arg names can be different
         # with different libs.
         result = yield from self._trace_method(
-            self.__wrapped__.executemany, query, {'sql.executemany': 'true'},
-            query, *args, **kwargs)  # noqa: E999
+            self.__wrapped__.executemany,
+            query,
+            {"sql.executemany": "true"},
+            query,
+            *args,
+            **kwargs
+        )  # noqa: E999
         return result
 
     @asyncio.coroutine
     def execute(self, query, *args, **kwargs):
         result = yield from self._trace_method(
-            self.__wrapped__.execute, query, {}, query, *args, **kwargs)
+            self.__wrapped__.execute, query, {}, query, *args, **kwargs
+        )
         return result
 
     @asyncio.coroutine
     def callproc(self, proc, args):
         result = yield from self._trace_method(
-            self.__wrapped__.callproc, proc, {}, proc, args)  # noqa: E999
+            self.__wrapped__.callproc, proc, {}, proc, args
+        )  # noqa: E999
         return result
 
 

@@ -20,8 +20,8 @@ from ...util import assert_dict_issuperset
 
 class FlaskCacheTest(unittest.TestCase):
     SERVICE = "test-flask-cache"
-    TEST_REDIS_PORT = str(REDIS_CONFIG['port'])
-    TEST_MEMCACHED_PORT = str(MEMCACHED_CONFIG['port'])
+    TEST_REDIS_PORT = str(REDIS_CONFIG["port"])
+    TEST_MEMCACHED_PORT = str(MEMCACHED_CONFIG["port"])
 
     def test_simple_cache_get(self):
         # initialize the dummy writer
@@ -184,9 +184,7 @@ class FlaskCacheTest(unittest.TestCase):
         eq_(span.span_type, "cache")
         eq_(span.error, 0)
 
-        expected_meta = {
-            "flask_cache.backend": "simple",
-        }
+        expected_meta = {"flask_cache.backend": "simple"}
 
         assert_dict_issuperset(span.meta, expected_meta)
 
@@ -201,7 +199,7 @@ class FlaskCacheTest(unittest.TestCase):
         app = Flask(__name__)
         cache = Cache(app, config={"CACHE_TYPE": "simple"})
 
-        cache.get_many('first_complex_op', 'second_complex_op')
+        cache.get_many("first_complex_op", "second_complex_op")
         spans = writer.pop()
         eq_(len(spans), 1)
         span = spans[0]
@@ -229,10 +227,7 @@ class FlaskCacheTest(unittest.TestCase):
         app = Flask(__name__)
         cache = Cache(app, config={"CACHE_TYPE": "simple"})
 
-        cache.set_many({
-            'first_complex_op': 10,
-            'second_complex_op': 20,
-        })
+        cache.set_many({"first_complex_op": 10, "second_complex_op": 20})
         spans = writer.pop()
         eq_(len(spans), 1)
         span = spans[0]
@@ -265,17 +260,14 @@ class FlaskCacheTest(unittest.TestCase):
         tracer = Tracer()
         Cache = get_traced_cache(tracer, service=self.SERVICE)
         app = Flask(__name__)
-        config = {
-            "CACHE_TYPE": "redis",
-            "CACHE_REDIS_PORT": self.TEST_REDIS_PORT,
-        }
+        config = {"CACHE_TYPE": "redis", "CACHE_REDIS_PORT": self.TEST_REDIS_PORT}
         cache = Cache(app, config=config)
         # test tags and attributes
         with cache._TracedCache__trace("flask_cache.cmd") as span:
             eq_(span.service, cache._datadog_service)
             eq_(span.span_type, TYPE)
             eq_(span.meta[CACHE_BACKEND], "redis")
-            eq_(span.meta[net.TARGET_HOST], 'localhost')
+            eq_(span.meta[net.TARGET_HOST], "localhost")
             eq_(span.meta[net.TARGET_PORT], self.TEST_REDIS_PORT)
 
     def test_default_span_tags_memcached(self):
@@ -285,7 +277,9 @@ class FlaskCacheTest(unittest.TestCase):
         app = Flask(__name__)
         config = {
             "CACHE_TYPE": "memcached",
-            "CACHE_MEMCACHED_SERVERS": ["127.0.0.1:{}".format(self.TEST_MEMCACHED_PORT)],
+            "CACHE_MEMCACHED_SERVERS": [
+                "127.0.0.1:{}".format(self.TEST_MEMCACHED_PORT)
+            ],
         }
         cache = Cache(app, config=config)
         # test tags and attributes

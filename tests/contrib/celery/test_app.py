@@ -41,4 +41,6 @@ class CeleryAppTest(unittest.TestCase):
 
         # Assert the method is not patched
         self.assertFalse(isinstance(celery.Celery.task, wrapt.BoundFunctionWrapper))
-        self.assertFalse(isinstance(celery.Celery.Task.__init__, wrapt.BoundFunctionWrapper))
+        self.assertFalse(
+            isinstance(celery.Celery.Task.__init__, wrapt.BoundFunctionWrapper)
+        )

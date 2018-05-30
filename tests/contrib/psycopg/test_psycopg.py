@@ -20,14 +20,14 @@ from tests.contrib.config import POSTGRES_CONFIG
 from tests.test_tracer import get_dummy_tracer
 
 
-PSYCOPG_VERSION = tuple(map(int, psycopg2.__version__.split()[0].split('.')))
-TEST_PORT = str(POSTGRES_CONFIG['port'])
+PSYCOPG_VERSION = tuple(map(int, psycopg2.__version__.split()[0].split(".")))
+TEST_PORT = str(POSTGRES_CONFIG["port"])
 
 
 class PsycopgCore(object):
 
     # default service
-    TEST_SERVICE = 'postgres'
+    TEST_SERVICE = "postgres"
 
     def _get_conn_and_tracer(self):
         # implement me
@@ -50,7 +50,7 @@ class PsycopgCore(object):
         cursor.execute(q)
         rows = cursor.fetchall()
         end = time.time()
-        eq_(rows, [('foobarblah',)])
+        eq_(rows, [("foobarblah",)])
         assert rows
         spans = writer.pop()
         assert spans
@@ -87,7 +87,7 @@ class PsycopgCore(object):
         eq_(span.meta["out.port"], TEST_PORT)
         eq_(span.span_type, "sql")
 
-    @skipIf(PSYCOPG_VERSION < (2, 5), 'context manager not available in psycopg2==2.4')
+    @skipIf(PSYCOPG_VERSION < (2, 5), "context manager not available in psycopg2==2.4")
     def test_cursor_ctx_manager(self):
         # ensure cursors work with context managers
         # https://github.com/DataDog/dd-trace-py/issues/228
@@ -98,7 +98,7 @@ class PsycopgCore(object):
             cur.execute(query="select 'blah'")
             rows = cur.fetchall()
             assert len(rows) == 1, row
-            assert rows[0][0] == 'blah'
+            assert rows[0][0] == "blah"
 
         spans = tracer.writer.pop()
         assert len(spans) == 1
@@ -113,7 +113,7 @@ class PsycopgCore(object):
         conn.cursor().execute("select 'blah'")
         assert not tracer.writer.pop()
 
-    @skipIf(PSYCOPG_VERSION < (2, 5), '_json is not available in psycopg2==2.4')
+    @skipIf(PSYCOPG_VERSION < (2, 5), "_json is not available in psycopg2==2.4")
     def test_manual_wrap_extension_types(self):
         conn, _ = self._get_conn_and_tracer()
         # NOTE: this will crash if it doesn't work.
@@ -125,7 +125,6 @@ class PsycopgCore(object):
         #   _ext.register_default_json(conn)
         #   TypeError: argument 2 must be a connection, cursor or None
         extras.register_default_json(conn)
-
 
     def test_manual_wrap_extension_adapt(self):
         conn, _ = self._get_conn_and_tracer()
@@ -140,7 +139,7 @@ class PsycopgCore(object):
         #   binary = _ext.adapt(b'12345)
         #   binary.prepare(conn)
         #   TypeError: argument 2 must be a connection, cursor or None
-        binary = extensions.adapt(b'12345')
+        binary = extensions.adapt(b"12345")
         binary.prepare(conn)
 
     def test_connect_factory(self):
@@ -155,14 +154,13 @@ class PsycopgCore(object):
         # ensure we have the service types
         service_meta = tracer.writer.pop_services()
         expected = {
-            "db" : {"app":"postgres", "app_type":"db"},
-            "another" : {"app":"postgres", "app_type":"db"},
+            "db": {"app": "postgres", "app_type": "db"},
+            "another": {"app": "postgres", "app_type": "db"},
         }
         eq_(service_meta, expected)
 
 
 class TestPsycopgPatch(PsycopgCore):
-
     def setUp(self):
         patch()
 
@@ -214,9 +212,9 @@ class TestPsycopgPatch(PsycopgCore):
         assert spans, spans
         eq_(len(spans), 1)
 
+
 def test_backwards_compatibilty_v3():
     tracer = get_dummy_tracer()
     factory = connection_factory(tracer, service="my-postgres-db")
     conn = psycopg2.connect(connection_factory=factory, **POSTGRES_CONFIG)
     conn.cursor().execute("select 'blah'")
-

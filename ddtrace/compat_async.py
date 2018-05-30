@@ -18,6 +18,7 @@ def _make_async_decorator(tracer, coro, *params, **kw_params):
     :param tuple params: arguments given to the Tracer.trace()
     :param dict kw_params: keyword arguments given to the Tracer.trace()
     """
+
     @functools.wraps(coro)
     @asyncio.coroutine
     def func_wrapper(*args, **kwargs):

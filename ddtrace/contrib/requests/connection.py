@@ -28,13 +28,15 @@ def _extract_service_name(session, span, netloc=None):
     Updated service name > parent service name > default to `requests`.
     """
     cfg = config.get_from(session)
-    if cfg['split_by_domain'] and netloc:
+    if cfg["split_by_domain"] and netloc:
         return netloc
 
-    service_name = cfg['service_name']
-    if (service_name == DEFAULT_SERVICE and
-            span._parent is not None and
-            span._parent.service is not None):
+    service_name = cfg["service_name"]
+    if (
+        service_name == DEFAULT_SERVICE
+        and span._parent is not None
+        and span._parent.service is not None
+    ):
         service_name = span._parent.service
     return service_name
 
@@ -45,15 +47,15 @@ def _wrap_request(func, instance, args, kwargs):
     # and is ddtrace.tracer; it's used only inside our tests and can
     # be easily changed by providing a TracingTestCase that sets common
     # tracing functionalities.
-    tracer = getattr(instance, 'datadog_tracer', ddtrace.tracer)
+    tracer = getattr(instance, "datadog_tracer", ddtrace.tracer)
 
     # skip if tracing is not enabled
     if not tracer.enabled:
         return func(*args, **kwargs)
 
-    method = kwargs.get('method') or args[0]
-    url = kwargs.get('url') or args[1]
-    headers = kwargs.get('headers', {})
+    method = kwargs.get("method") or args[0]
+    url = kwargs.get("url") or args[1]
+    headers = kwargs.get("headers", {})
     parsed_uri = parse.urlparse(url)
 
     with tracer.trace("requests.request", span_type=http.TYPE) as span:
@@ -61,10 +63,10 @@ def _wrap_request(func, instance, args, kwargs):
         span.service = _extract_service_name(instance, span, netloc=parsed_uri.netloc)
 
         # propagate distributed tracing headers
-        if config.get_from(instance).get('distributed_tracing'):
+        if config.get_from(instance).get("distributed_tracing"):
             propagator = HTTPPropagator()
             propagator.inject(span.context, headers)
-            kwargs['headers'] = headers
+            kwargs["headers"] = headers
 
         response = None
         try:

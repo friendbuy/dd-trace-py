@@ -23,8 +23,8 @@ class TracedCursor(wrapt.ObjectProxy):
     def __init__(self, cursor, pin):
         super(TracedCursor, self).__init__(cursor)
         pin.onto(self)
-        name = pin.app or 'sql'
-        self._self_datadog_name = '%s.query' % name
+        name = pin.app or "sql"
+        self._self_datadog_name = "%s.query" % name
 
     def _trace_method(self, method, resource, extra_tags, *args, **kwargs):
         pin = Pin.get_from(self)
@@ -32,7 +32,9 @@ class TracedCursor(wrapt.ObjectProxy):
             return method(*args, **kwargs)
         service = pin.service
 
-        with pin.tracer.trace(self._self_datadog_name, service=service, resource=resource) as s:
+        with pin.tracer.trace(
+            self._self_datadog_name, service=service, resource=resource
+        ) as s:
             s.span_type = sql.TYPE
             s.set_tags(pin.tags)
             s.set_tags(extra_tags)
@@ -46,16 +48,21 @@ class TracedCursor(wrapt.ObjectProxy):
         # FIXME[matt] properly handle kwargs here. arg names can be different
         # with different libs.
         return self._trace_method(
-            self.__wrapped__.executemany, query, {'sql.executemany': 'true'},
-            query, *args, **kwargs)
+            self.__wrapped__.executemany,
+            query,
+            {"sql.executemany": "true"},
+            query,
+            *args,
+            **kwargs
+        )
 
     def execute(self, query, *args, **kwargs):
         return self._trace_method(
-            self.__wrapped__.execute, query, {}, query, *args, **kwargs)
+            self.__wrapped__.execute, query, {}, query, *args, **kwargs
+        )
 
     def callproc(self, proc, args):
-        return self._trace_method(self.__wrapped__.callproc, proc, {}, proc,
-                                  args)
+        return self._trace_method(self.__wrapped__.callproc, proc, {}, proc, args)
 
     def __enter__(self):
         # previous versions of the dbapi didn't support context managers. let's
@@ -97,4 +104,4 @@ def _get_vendor(conn):
 
 
 def _get_module_name(conn):
-    return conn.__class__.__module__.split('.')[0]
+    return conn.__class__.__module__.split(".")[0]

@@ -12,13 +12,13 @@ from .conf import settings
 
 log = logging.getLogger(__name__)
 
-CURSOR_ATTR = '_datadog_original_cursor'
-ALL_CONNS_ATTR = '_datadog_original_connections_all'
+CURSOR_ATTR = "_datadog_original_cursor"
+ALL_CONNS_ATTR = "_datadog_original_connections_all"
 
 
 def patch_db(tracer):
     if hasattr(connections, ALL_CONNS_ATTR):
-        log.debug('db already patched')
+        log.debug("db already patched")
         return
     setattr(connections, ALL_CONNS_ATTR, connections.all)
 
@@ -30,16 +30,18 @@ def patch_db(tracer):
 
     connections.all = all_connections.__get__(connections, type(connections))
 
+
 def unpatch_db():
     for c in connections.all():
         unpatch_conn(c)
 
     all_connections = getattr(connections, ALL_CONNS_ATTR, None)
     if all_connections is None:
-        log.debug('nothing to do, the db is not patched')
+        log.debug("nothing to do, the db is not patched")
         return
     connections.all = all_connections
     delattr(connections, ALL_CONNS_ATTR)
+
 
 def patch_conn(tracer, conn):
     if hasattr(conn, CURSOR_ATTR):
@@ -52,50 +54,47 @@ def patch_conn(tracer, conn):
 
     conn.cursor = cursor
 
+
 def unpatch_conn(conn):
     cursor = getattr(conn, CURSOR_ATTR, None)
     if cursor is None:
-        log.debug('nothing to do, the connection is not patched')
+        log.debug("nothing to do, the connection is not patched")
         return
     conn.cursor = cursor
     delattr(conn, CURSOR_ATTR)
 
-class TracedCursor(object):
 
+class TracedCursor(object):
     def __init__(self, tracer, conn, cursor):
         self.tracer = tracer
         self.conn = conn
         self.cursor = cursor
 
-        self._vendor = getattr(conn, 'vendor', 'db')     # e.g sqlite, postgres
-        self._alias = getattr(conn, 'alias', 'default')  # e.g. default, users
+        self._vendor = getattr(conn, "vendor", "db")  # e.g sqlite, postgres
+        self._alias = getattr(conn, "alias", "default")  # e.g. default, users
 
         prefix = sqlx.normalize_vendor(self._vendor)
         self._name = "%s.%s" % (prefix, "query")  # e.g sqlite.query
 
         database_prefix = (
-            '{}-'.format(settings.DEFAULT_DATABASE_PREFIX)
-            if settings.DEFAULT_DATABASE_PREFIX else ''
+            "{}-".format(settings.DEFAULT_DATABASE_PREFIX)
+            if settings.DEFAULT_DATABASE_PREFIX
+            else ""
         )
 
         self._service = "%s%s%s" % (
             database_prefix,
             self._alias,
-            "db"
+            "db",
         )  # e.g. service-defaultdb or service-postgresdb
 
         self.tracer.set_service_info(
-            service=self._service,
-            app=prefix,
-            app_type=AppTypes.db,
+            service=self._service, app=prefix, app_type=AppTypes.db
         )
 
     def _trace(self, func, sql, params):
         span = self.tracer.trace(
-            self._name,
-            resource=sql,
-            service=self._service,
-            span_type=sqlx.TYPE
+            self._name, resource=sql, service=self._service, span_type=sqlx.TYPE
         )
 
         with span:

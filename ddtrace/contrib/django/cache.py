@@ -11,23 +11,23 @@ from .utils import quantize_key_values, _resource_from_cache_prefix
 log = logging.getLogger(__name__)
 
 # code instrumentation
-DATADOG_NAMESPACE = '__datadog_original_{method}'
+DATADOG_NAMESPACE = "__datadog_original_{method}"
 TRACED_METHODS = [
-    'get',
-    'set',
-    'add',
-    'delete',
-    'incr',
-    'decr',
-    'get_many',
-    'set_many',
-    'delete_many',
+    "get",
+    "set",
+    "add",
+    "delete",
+    "incr",
+    "decr",
+    "get_many",
+    "set_many",
+    "delete_many",
 ]
 
 # standard tags
-TYPE = 'cache'
-CACHE_BACKEND = 'django.cache.backend'
-CACHE_COMMAND_KEY = 'django.cache.key'
+TYPE = "cache"
+CACHE_BACKEND = "django.cache.backend"
+CACHE_COMMAND_KEY = "django.cache.key"
 
 
 def patch_cache(tracer):
@@ -41,21 +41,23 @@ def patch_cache(tracer):
           Django supported cache servers (Redis, Memcached, Database, Custom)
     """
     # discover used cache backends
-    cache_backends = [cache['BACKEND'] for cache in django_settings.CACHES.values()]
+    cache_backends = [cache["BACKEND"] for cache in django_settings.CACHES.values()]
 
     def _trace_operation(fn, method_name):
         """
         Return a wrapped function that traces a cache operation
         """
+
         @wraps(fn)
         def wrapped(self, *args, **kwargs):
             # get the original function method
             method = getattr(self, DATADOG_NAMESPACE.format(method=method_name))
-            with tracer.trace('django.cache',
-                    span_type=TYPE, service=settings.DEFAULT_SERVICE) as span:
+            with tracer.trace(
+                "django.cache", span_type=TYPE, service=settings.DEFAULT_SERVICE
+            ) as span:
                 # update the resource name and tag the cache backend
                 span.resource = _resource_from_cache_prefix(method_name, self)
-                cache_backend = '{}.{}'.format(self.__module__, self.__class__.__name__)
+                cache_backend = "{}.{}".format(self.__module__, self.__class__.__name__)
                 span.set_tag(CACHE_BACKEND, cache_backend)
 
                 if args:
@@ -63,6 +65,7 @@ def patch_cache(tracer):
                     span.set_tag(CACHE_COMMAND_KEY, keys)
 
                 return method(*args, **kwargs)
+
         return wrapped
 
     def _wrap_method(cls, method_name):
@@ -77,7 +80,7 @@ def patch_cache(tracer):
 
         # prevent patching each backend's method more than once
         if hasattr(cls, DATADOG_NAMESPACE.format(method=method_name)):
-            log.debug('{} already traced'.format(method_name))
+            log.debug("{} already traced".format(method_name))
         else:
             method = getattr(cls, method_name)
             setattr(cls, DATADOG_NAMESPACE.format(method=method_name), method)
@@ -90,16 +93,18 @@ def patch_cache(tracer):
         for method in TRACED_METHODS:
             _wrap_method(cache, method)
 
+
 def unpatch_method(cls, method_name):
     method = getattr(cls, DATADOG_NAMESPACE.format(method=method_name), None)
     if method is None:
-        log.debug('nothing to do, the class is not patched')
+        log.debug("nothing to do, the class is not patched")
         return
     setattr(cls, method_name, method)
     delattr(cls, DATADOG_NAMESPACE.format(method=method_name))
 
+
 def unpatch_cache():
-    cache_backends = [cache['BACKEND'] for cache in django_settings.CACHES.values()]
+    cache_backends = [cache["BACKEND"] for cache in django_settings.CACHES.values()]
     for cache_module in cache_backends:
         cache = import_from_string(cache_module, cache_module)
 

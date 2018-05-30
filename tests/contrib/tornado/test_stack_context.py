@@ -26,7 +26,7 @@ class TestStackContext(TornadoTestCase):
         with TracerStackContext():
             ctx = Context(trace_id=100, span_id=101)
             self.tracer.context_provider.activate(ctx)
-            with self.tracer.trace('tornado'):
+            with self.tracer.trace("tornado"):
                 sleep(0.01)
 
         traces = self.tracer.writer.pop_traces()
@@ -39,7 +39,7 @@ class TestStackContext(TornadoTestCase):
         # a Context is discarded if not set inside a TracerStackContext
         ctx = Context(trace_id=100, span_id=101)
         self.tracer.context_provider.activate(ctx)
-        with self.tracer.trace('tornado'):
+        with self.tracer.trace("tornado"):
             sleep(0.01)
 
         traces = self.tracer.writer.pop_traces()

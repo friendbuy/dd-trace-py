@@ -1,3 +1,3 @@
-FILTERS_KEY = 'FILTERS'
+FILTERS_KEY = "FILTERS"
 SAMPLE_RATE_METRIC_KEY = "_sample_rate"
-SAMPLING_PRIORITY_KEY = '_sampling_priority_v1'
+SAMPLING_PRIORITY_KEY = "_sampling_priority_v1"

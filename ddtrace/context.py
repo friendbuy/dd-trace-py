@@ -22,7 +22,10 @@ class Context(object):
 
     This data structure is thread-safe.
     """
-    def __init__(self, trace_id=None, span_id=None, sampled=True, sampling_priority=None):
+
+    def __init__(
+        self, trace_id=None, span_id=None, sampled=True, sampling_priority=None
+    ):
         """
         Initialize a new thread-safe ``Context``.
 
@@ -134,13 +137,22 @@ class Context(object):
             # In asynchronous environments, it's legit to close the root span before
             # some children. On the other hand, asynchronous web frameworks still expect
             # to close the root span after all the children.
-            tracer = getattr(span, '_tracer', None)
-            if tracer and tracer.debug_logging and span._parent is None and not self._is_finished():
+            tracer = getattr(span, "_tracer", None)
+            if (
+                tracer
+                and tracer.debug_logging
+                and span._parent is None
+                and not self._is_finished()
+            ):
                 opened_spans = len(self._trace) - self._finished_spans
-                log.debug('Root span "%s" closed, but the trace has %d unfinished spans:', span.name, opened_spans)
+                log.debug(
+                    'Root span "%s" closed, but the trace has %d unfinished spans:',
+                    span.name,
+                    opened_spans,
+                )
                 spans = [x for x in self._trace if not x._finished]
                 for wrong_span in spans:
-                    log.debug('\n%s', wrong_span.pprint())
+                    log.debug("\n%s", wrong_span.pprint())
 
     def is_finished(self):
         """
@@ -202,14 +214,15 @@ class ThreadLocalContext(object):
     is required to prevent multiple threads sharing the same ``Context``
     in different executions.
     """
+
     def __init__(self):
         self._locals = threading.local()
 
     def set(self, ctx):
-        setattr(self._locals, 'context', ctx)
+        setattr(self._locals, "context", ctx)
 
     def get(self):
-        ctx = getattr(self._locals, 'context', None)
+        ctx = getattr(self._locals, "context", None)
         if not ctx:
             # create a new Context if it's not available
             ctx = Context()

@@ -20,41 +20,16 @@ def test_normalize_filter():
     # ensure we can properly normalize queries FIXME[matt] move to the agent
     cases = [
         (None, {}),
+        ({"team": "leafs"}, {"team": "?"}),
+        ({"age": {"$gt": 20}}, {"age": {"$gt": "?"}}),
+        ({"age": {"$gt": 20}}, {"age": {"$gt": "?"}}),
+        ({"_id": {"$in": [1, 2, 3]}}, {"_id": {"$in": "?"}}),
+        ({"_id": {"$nin": [1, 2, 3]}}, {"_id": {"$nin": "?"}}),
+        (20, {}),
         (
-            {"team":"leafs"},
-            {"team": "?"},
+            {"status": "A", "$or": [{"age": {"$lt": 30}}, {"type": 1}]},
+            {"status": "?", "$or": [{"age": {"$lt": "?"}}, {"type": "?"}]},
         ),
-        (
-            {"age": {"$gt" : 20}},
-            {"age": {"$gt" : "?"}},
-        ),
-        (
-            {"age": {"$gt" : 20}},
-            {"age": {"$gt" : "?"}},
-        ),
-        (
-            {"_id": {"$in" : [1, 2, 3]}},
-            {"_id": {"$in" : "?"}},
-        ),
-        (
-            {"_id": {"$nin" : [1, 2, 3]}},
-            {"_id": {"$nin" : "?"}},
-        ),
-
-        (
-            20,
-            {},
-        ),
-        (
-            {
-                "status": "A",
-                "$or": [ { "age": { "$lt": 30 } }, { "type": 1 } ]
-            },
-            {
-                "status": "?",
-                "$or": [ { "age": { "$lt": "?" } }, { "type": "?" } ]
-            }
-        )
     ]
     for i, expected in cases:
         out = normalize_filter(i)
@@ -68,12 +43,11 @@ class PymongoCore(object):
     TODO: merge to a single class when patching is the only way.
     """
 
-    TEST_SERVICE = 'test-mongo'
+    TEST_SERVICE = "test-mongo"
 
     def get_tracer_and_client(service):
         # implement me
         pass
-
 
     def test_update(self):
         # ensure we trace deletes
@@ -82,16 +56,15 @@ class PymongoCore(object):
         db = client["testdb"]
         db.drop_collection("songs")
         input_songs = [
-            {'name' : 'Powderfinger', 'artist':'Neil'},
-            {'name' : 'Harvest', 'artist':'Neil'},
-            {'name' : 'Suzanne', 'artist':'Leonard'},
-            {'name' : 'Partisan', 'artist':'Leonard'},
+            {"name": "Powderfinger", "artist": "Neil"},
+            {"name": "Harvest", "artist": "Neil"},
+            {"name": "Suzanne", "artist": "Leonard"},
+            {"name": "Partisan", "artist": "Leonard"},
         ]
         db.songs.insert_many(input_songs)
 
         result = db.songs.update_many(
-            {"artist":"Neil"},
-            {"$set": {"artist":"Shakey"}},
+            {"artist": "Neil"}, {"$set": {"artist": "Shakey"}}
         )
 
         eq_(result.matched_count, 2)
@@ -109,14 +82,11 @@ class PymongoCore(object):
             assert span.meta.get("out.host")
             assert span.meta.get("out.port")
 
-        expected_resources = set([
-            "drop songs",
-            'update songs {"artist": "?"}',
-            "insert songs",
-        ])
+        expected_resources = set(
+            ["drop songs", 'update songs {"artist": "?"}', "insert songs"]
+        )
 
         eq_(expected_resources, {s.resource for s in spans})
-
 
     def test_delete(self):
         # ensure we trace deletes
@@ -126,23 +96,23 @@ class PymongoCore(object):
         collection_name = "here.are.songs"
         db.drop_collection(collection_name)
         input_songs = [
-            {'name' : 'Powderfinger', 'artist':'Neil'},
-            {'name' : 'Harvest', 'artist':'Neil'},
-            {'name' : 'Suzanne', 'artist':'Leonard'},
-            {'name' : 'Partisan', 'artist':'Leonard'},
+            {"name": "Powderfinger", "artist": "Neil"},
+            {"name": "Harvest", "artist": "Neil"},
+            {"name": "Suzanne", "artist": "Leonard"},
+            {"name": "Partisan", "artist": "Leonard"},
         ]
 
         songs = db[collection_name]
         songs.insert_many(input_songs)
 
         # test delete one
-        af = {'artist':'Neil'}
+        af = {"artist": "Neil"}
         eq_(songs.count(af), 2)
         songs.delete_one(af)
         eq_(songs.count(af), 1)
 
         # test delete many
-        af = {'artist':'Leonard'}
+        af = {"artist": "Leonard"}
         eq_(songs.count(af), 2)
         songs.delete_many(af)
         eq_(songs.count(af), 0)
@@ -172,7 +142,6 @@ class PymongoCore(object):
 
         eq_(sorted(expected_resources), sorted(s.resource for s in spans))
 
-
     def test_insert_find(self):
         tracer, client = self.get_tracer_and_client()
         writer = tracer.writer
@@ -181,18 +150,9 @@ class PymongoCore(object):
         db = client.testdb
         db.drop_collection("teams")
         teams = [
-            {
-                'name' : 'Toronto Maple Leafs',
-                'established' : 1917,
-            },
-            {
-                'name' : 'Montreal Canadiens',
-                'established' : 1910,
-            },
-            {
-                'name' : 'New York Rangers',
-                'established' : 1926,
-            }
+            {"name": "Toronto Maple Leafs", "established": 1917},
+            {"name": "Montreal Canadiens", "established": 1910},
+            {"name": "New York Rangers", "established": 1926},
         ]
 
         # create some data (exercising both ways of inserting)
@@ -241,11 +201,11 @@ class PymongoCore(object):
 class TestPymongoTraceClient(PymongoCore):
     """Test suite for pymongo with the legacy trace interface"""
 
-    TEST_SERVICE = 'test-mongo-trace-client'
+    TEST_SERVICE = "test-mongo-trace-client"
 
     def get_tracer_and_client(self):
         tracer = get_dummy_tracer()
-        original_client = pymongo.MongoClient(port=MONGO_CONFIG['port'])
+        original_client = pymongo.MongoClient(port=MONGO_CONFIG["port"])
         client = trace_mongo_client(original_client, tracer, service=self.TEST_SERVICE)
         return tracer, client
 
@@ -263,7 +223,7 @@ class TestPymongoPatchDefault(PymongoCore):
 
     def get_tracer_and_client(self):
         tracer = get_dummy_tracer()
-        client = pymongo.MongoClient(port=MONGO_CONFIG['port'])
+        client = pymongo.MongoClient(port=MONGO_CONFIG["port"])
         Pin.get_from(client).clone(tracer=tracer).onto(client)
         return tracer, client
 
@@ -277,14 +237,14 @@ class TestPymongoPatchDefault(PymongoCore):
         eq_(len(services), 1)
         assert self.TEST_SERVICE in services
         s = services[self.TEST_SERVICE]
-        assert s['app_type'] == 'db'
-        assert s['app'] == 'mongodb'
+        assert s["app_type"] == "db"
+        assert s["app"] == "mongodb"
 
 
 class TestPymongoPatchConfigured(PymongoCore):
     """Test suite for pymongo with a configured patched library"""
 
-    TEST_SERVICE = 'test-mongo-trace-client'
+    TEST_SERVICE = "test-mongo-trace-client"
 
     def setUp(self):
         patch()
@@ -294,7 +254,7 @@ class TestPymongoPatchConfigured(PymongoCore):
 
     def get_tracer_and_client(self):
         tracer = get_dummy_tracer()
-        client = pymongo.MongoClient(port=MONGO_CONFIG['port'])
+        client = pymongo.MongoClient(port=MONGO_CONFIG["port"])
         Pin(service=self.TEST_SERVICE, tracer=tracer).onto(client)
         return tracer, client
 
@@ -306,7 +266,7 @@ class TestPymongoPatchConfigured(PymongoCore):
         patch()
         patch()
 
-        client = pymongo.MongoClient(port=MONGO_CONFIG['port'])
+        client = pymongo.MongoClient(port=MONGO_CONFIG["port"])
         Pin.get_from(client).clone(tracer=tracer).onto(client)
         client["testdb"].drop_collection("whatever")
 
@@ -317,7 +277,7 @@ class TestPymongoPatchConfigured(PymongoCore):
         # Test unpatch
         unpatch()
 
-        client = pymongo.MongoClient(port=MONGO_CONFIG['port'])
+        client = pymongo.MongoClient(port=MONGO_CONFIG["port"])
         client["testdb"].drop_collection("whatever")
 
         spans = writer.pop()
@@ -326,11 +286,10 @@ class TestPymongoPatchConfigured(PymongoCore):
         # Test patch again
         patch()
 
-        client = pymongo.MongoClient(port=MONGO_CONFIG['port'])
+        client = pymongo.MongoClient(port=MONGO_CONFIG["port"])
         Pin.get_from(client).clone(tracer=tracer).onto(client)
         client["testdb"].drop_collection("whatever")
 
         spans = writer.pop()
         assert spans, spans
         eq_(len(spans), 1)
-

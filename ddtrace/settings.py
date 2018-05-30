@@ -12,6 +12,7 @@ class ConfigException(Exception):
     """Configuration exception when an integration that is not available
     is called in the `Config` object.
     """
+
     pass
 
 
@@ -21,6 +22,7 @@ class Config(object):
     this instance to register their defaults, so that they're public
     available and can be updated by users.
     """
+
     def __init__(self):
         # use a dict as underlying storing mechanism
         self._config = {}
@@ -30,7 +32,9 @@ class Config(object):
             return self._config[name]
         except KeyError as e:
             raise ConfigException(
-                'Integration "{}" is not registered in this configuration'.format(e.message)
+                'Integration "{}" is not registered in this configuration'.format(
+                    e.message
+                )
             )
 
     def get_from(self, obj):
@@ -41,7 +45,7 @@ class Config(object):
         """
         pin = Pin.get_from(obj)
         if pin is None:
-            log.debug('No configuration found for %s', obj)
+            log.debug("No configuration found for %s", obj)
             return {}
 
         return pin._config

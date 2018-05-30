@@ -4,13 +4,9 @@ from ..utils.importlib import require_modules, func_name, module_name
 
 
 deprecation(
-    name='ddtrace.contrib.util',
-    message='Use `ddtrace.utils.importlib` module instead',
-    version='1.0.0',
+    name="ddtrace.contrib.util",
+    message="Use `ddtrace.utils.importlib` module instead",
+    version="1.0.0",
 )
 
-__all__ = [
-    'require_modules',
-    'func_name',
-    'module_name',
-]
+__all__ = ["require_modules", "func_name", "module_name"]

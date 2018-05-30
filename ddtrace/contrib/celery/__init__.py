@@ -46,7 +46,7 @@ applications or tasks using a fine grain patching method::
 from ...utils.importlib import require_modules
 
 
-required_modules = ['celery']
+required_modules = ["celery"]
 
 with require_modules(required_modules) as missing_modules:
     if not missing_modules:
@@ -55,10 +55,10 @@ with require_modules(required_modules) as missing_modules:
         from .task import patch_task, unpatch_task
 
         __all__ = [
-            'patch',
-            'patch_app',
-            'patch_task',
-            'unpatch',
-            'unpatch_app',
-            'unpatch_task',
+            "patch",
+            "patch_app",
+            "patch_task",
+            "unpatch",
+            "unpatch_app",
+            "unpatch_task",
         ]

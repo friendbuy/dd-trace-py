@@ -6,7 +6,10 @@ from nose.tools import eq_, ok_
 from ddtrace.ext import net
 from ddtrace.tracer import Tracer, Span
 from ddtrace.contrib.flask_cache import get_traced_cache
-from ddtrace.contrib.flask_cache.utils import _extract_conn_tags, _resource_from_cache_prefix
+from ddtrace.contrib.flask_cache.utils import (
+    _extract_conn_tags,
+    _resource_from_cache_prefix,
+)
 from ddtrace.contrib.flask_cache.tracers import TYPE, CACHE_BACKEND
 
 # 3rd party
@@ -24,14 +27,15 @@ class FlaskCacheUtilsTest(unittest.TestCase):
         tracer = Tracer()
         Cache = get_traced_cache(tracer, service=self.SERVICE)
         app = Flask(__name__)
-        config = {
-            "CACHE_TYPE": "redis",
-            "CACHE_REDIS_PORT": REDIS_CONFIG['port'],
-        }
+        config = {"CACHE_TYPE": "redis", "CACHE_REDIS_PORT": REDIS_CONFIG["port"]}
         traced_cache = Cache(app, config=config)
         # extract client data
         meta = _extract_conn_tags(traced_cache.cache._client)
-        expected_meta = {'out.host': 'localhost', 'out.port': REDIS_CONFIG['port'], 'out.redis_db': 0}
+        expected_meta = {
+            "out.host": "localhost",
+            "out.port": REDIS_CONFIG["port"],
+            "out.redis_db": 0,
+        }
         eq_(meta, expected_meta)
 
     def test_extract_memcached_connection_metadata(self):
@@ -41,12 +45,14 @@ class FlaskCacheUtilsTest(unittest.TestCase):
         app = Flask(__name__)
         config = {
             "CACHE_TYPE": "memcached",
-            "CACHE_MEMCACHED_SERVERS": ["127.0.0.1:{}".format(MEMCACHED_CONFIG['port'])],
+            "CACHE_MEMCACHED_SERVERS": [
+                "127.0.0.1:{}".format(MEMCACHED_CONFIG["port"])
+            ],
         }
         traced_cache = Cache(app, config=config)
         # extract client data
         meta = _extract_conn_tags(traced_cache.cache._client)
-        expected_meta = {'out.host': '127.0.0.1', 'out.port': MEMCACHED_CONFIG['port']}
+        expected_meta = {"out.host": "127.0.0.1", "out.port": MEMCACHED_CONFIG["port"]}
         eq_(meta, expected_meta)
 
     def test_extract_memcached_multiple_connection_metadata(self):
@@ -57,17 +63,14 @@ class FlaskCacheUtilsTest(unittest.TestCase):
         config = {
             "CACHE_TYPE": "memcached",
             "CACHE_MEMCACHED_SERVERS": [
-                "127.0.0.1:{}".format(MEMCACHED_CONFIG['port']),
-                "localhost:{}".format(MEMCACHED_CONFIG['port']),
+                "127.0.0.1:{}".format(MEMCACHED_CONFIG["port"]),
+                "localhost:{}".format(MEMCACHED_CONFIG["port"]),
             ],
         }
         traced_cache = Cache(app, config=config)
         # extract client data
         meta = _extract_conn_tags(traced_cache.cache._client)
-        expected_meta = {
-            'out.host': '127.0.0.1',
-            'out.port': MEMCACHED_CONFIG['port'],
-        }
+        expected_meta = {"out.host": "127.0.0.1", "out.port": MEMCACHED_CONFIG["port"]}
         eq_(meta, expected_meta)
 
     def test_resource_from_cache_with_prefix(self):
@@ -77,7 +80,7 @@ class FlaskCacheUtilsTest(unittest.TestCase):
         app = Flask(__name__)
         config = {
             "CACHE_TYPE": "redis",
-            "CACHE_REDIS_PORT": REDIS_CONFIG['port'],
+            "CACHE_REDIS_PORT": REDIS_CONFIG["port"],
             "CACHE_KEY_PREFIX": "users",
         }
         traced_cache = Cache(app, config=config)
@@ -93,7 +96,7 @@ class FlaskCacheUtilsTest(unittest.TestCase):
         app = Flask(__name__)
         config = {
             "CACHE_TYPE": "redis",
-            "CACHE_REDIS_PORT": REDIS_CONFIG['port'],
+            "CACHE_REDIS_PORT": REDIS_CONFIG["port"],
             "CACHE_KEY_PREFIX": "",
         }
         traced_cache = Cache(app, config=config)
@@ -107,10 +110,7 @@ class FlaskCacheUtilsTest(unittest.TestCase):
         tracer = Tracer()
         Cache = get_traced_cache(tracer, service=self.SERVICE)
         app = Flask(__name__)
-        config = {
-            "CACHE_REDIS_PORT": REDIS_CONFIG['port'],
-            "CACHE_TYPE": "redis",
-        }
+        config = {"CACHE_REDIS_PORT": REDIS_CONFIG["port"], "CACHE_TYPE": "redis"}
         traced_cache = Cache(app, config={"CACHE_TYPE": "redis"})
         # expect only the resource name
         expected_resource = "get"

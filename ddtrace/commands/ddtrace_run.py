@@ -30,10 +30,12 @@ Available environment variables:
                            This value is passed through when setting up middleware for web framework integrations.
                            (e.g. pylons, flask, django)
                            For tracing without a web integration, prefer setting the service name in code.
-""" # noqa
+"""  # noqa
+
 
 def _ddtrace_root():
     from ddtrace import __file__
+
     return os.path.dirname(__file__)
 
 
@@ -42,14 +44,13 @@ def _add_bootstrap_to_pythonpath(bootstrap_dir):
     Add our bootstrap directory to the head of $PYTHONPATH to ensure
     it is loaded before program code
     """
-    python_path = os.environ.get('PYTHONPATH', '')
+    python_path = os.environ.get("PYTHONPATH", "")
 
     if python_path:
-        new_path = "%s%s%s" % (bootstrap_dir, os.path.pathsep,
-                os.environ['PYTHONPATH'])
-        os.environ['PYTHONPATH'] = new_path
+        new_path = "%s%s%s" % (bootstrap_dir, os.path.pathsep, os.environ["PYTHONPATH"])
+        os.environ["PYTHONPATH"] = new_path
     else:
-        os.environ['PYTHONPATH'] = bootstrap_dir
+        os.environ["PYTHONPATH"] = bootstrap_dir
 
 
 def main():
@@ -62,11 +63,11 @@ def main():
     root_dir = _ddtrace_root()
     log.debug("ddtrace root: %s", root_dir)
 
-    bootstrap_dir = os.path.join(root_dir, 'bootstrap')
+    bootstrap_dir = os.path.join(root_dir, "bootstrap")
     log.debug("ddtrace bootstrap: %s", bootstrap_dir)
 
     _add_bootstrap_to_pythonpath(bootstrap_dir)
-    log.debug("PYTHONPATH: %s", os.environ['PYTHONPATH'])
+    log.debug("PYTHONPATH: %s", os.environ["PYTHONPATH"])
     log.debug("sys.path: %s", sys.path)
 
     executable = sys.argv[1]

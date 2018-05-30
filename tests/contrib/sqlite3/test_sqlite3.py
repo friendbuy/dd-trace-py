@@ -25,6 +25,7 @@ def test_backwards_compat():
     assert not rows.fetchall()
     assert not tracer.writer.pop()
 
+
 class TestSQLite(object):
     def setUp(self):
         patch()
@@ -41,9 +42,7 @@ class TestSQLite(object):
 
         services = tracer.writer.pop_services()
         eq_(len(services), 1)
-        expected = {
-            'sqlite': {'app': 'sqlite', 'app_type': 'db'}
-        }
+        expected = {"sqlite": {"app": "sqlite", "app_type": "db"}}
         eq_(expected, services)
 
         ddtrace.tracer = backup_tracer
@@ -59,9 +58,7 @@ class TestSQLite(object):
             pin = Pin.get_from(db)
             assert pin
             eq_("db", pin.app_type)
-            pin.clone(
-                service=service,
-                tracer=tracer).onto(db)
+            pin.clone(service=service, tracer=tracer).onto(db)
 
             # Ensure we can run a query and it's correctly traced
             q = "select * from sqlite_master"
@@ -102,8 +99,8 @@ class TestSQLite(object):
             eq_(span.error, 1)
             eq_(span.span_type, "sql")
             assert span.get_tag(errors.ERROR_STACK)
-            assert 'OperationalError' in span.get_tag(errors.ERROR_TYPE)
-            assert 'no such table' in span.get_tag(errors.ERROR_MSG)
+            assert "OperationalError" in span.get_tag(errors.ERROR_TYPE)
+            assert "no such table" in span.get_tag(errors.ERROR_MSG)
 
     def test_patch_unpatch(self):
         tracer = get_dummy_tracer()
@@ -144,4 +141,3 @@ class TestSQLite(object):
         spans = writer.pop()
         assert spans, spans
         eq_(len(spans), 1)
-

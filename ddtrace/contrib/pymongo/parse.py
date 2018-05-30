@@ -19,17 +19,17 @@ log = logging.getLogger(__name__)
 # MongoDB wire protocol commands
 # http://docs.mongodb.com/manual/reference/mongodb-wire-protocol
 OP_CODES = {
-    1    : "reply",
-    1000 : "msg",
-    2001 : "update",
-    2002 : "insert",
-    2003 : "reserved",
-    2004 : "query",
-    2005 : "get_more",
-    2006 : "delete",
-    2007 : "kill_cursors",
-    2010 : "command",
-    2011 : "command_reply",
+    1: "reply",
+    1000: "msg",
+    2001: "update",
+    2002: "insert",
+    2003: "reserved",
+    2004: "query",
+    2005: "get_more",
+    2006: "delete",
+    2007: "kill_cursors",
+    2010: "command",
+    2011: "command_reply",
 }
 
 # The maximum message length we'll try to parse
@@ -41,7 +41,7 @@ header_struct = struct.Struct("<iiii")
 class Command(object):
     """ Command stores information about a pymongo network command, """
 
-    __slots__ = ['name', 'coll', 'db', 'tags', 'metrics', 'query']
+    __slots__ = ["name", "coll", "db", "tags", "metrics", "query"]
 
     def __init__(self, name, db, coll):
         self.name = name
@@ -52,12 +52,11 @@ class Command(object):
         self.query = None
 
     def __repr__(self):
-        return (
-            "Command("
-            "name=%s,"
-            "db=%s,"
-            "coll=%s)"
-        ) % (self.name, self.db, self.coll)
+        return ("Command(" "name=%s," "db=%s," "coll=%s)") % (
+            self.name,
+            self.db,
+            self.coll,
+        )
 
 
 def parse_msg(msg_bytes):
@@ -116,6 +115,7 @@ def parse_msg(msg_bytes):
     cmd.metrics[netx.BYTES_OUT] = msg_len
     return cmd
 
+
 def parse_query(query):
     """ Return a command parsed from the given mongo db query. """
     db, coll = None, None
@@ -134,6 +134,7 @@ def parse_query(query):
     cmd.query = query.spec
     return cmd
 
+
 def parse_spec(spec, db=None):
     """ Return a Command that has parsed the relevant detail for the given
         pymongo SON spec.
@@ -146,30 +147,32 @@ def parse_spec(spec, db=None):
     name, coll = items[0]
     cmd = Command(name, db, coll)
 
-    if 'ordered' in spec: # in insert and update
-        cmd.tags['mongodb.ordered'] = spec['ordered']
+    if "ordered" in spec:  # in insert and update
+        cmd.tags["mongodb.ordered"] = spec["ordered"]
 
-    if cmd.name == 'insert':
-        if 'documents' in spec:
-            cmd.metrics['mongodb.documents'] = len(spec['documents'])
+    if cmd.name == "insert":
+        if "documents" in spec:
+            cmd.metrics["mongodb.documents"] = len(spec["documents"])
 
-    elif cmd.name == 'update':
-        updates = spec.get('updates')
+    elif cmd.name == "update":
+        updates = spec.get("updates")
         if updates:
             # FIXME[matt] is there ever more than one here?
             cmd.query = updates[0].get("q")
 
-    elif cmd.name == 'delete':
-        dels = spec.get('deletes')
+    elif cmd.name == "delete":
+        dels = spec.get("deletes")
         if dels:
             # FIXME[matt] is there ever more than one here?
             cmd.query = dels[0].get("q")
 
     return cmd
 
+
 def _cstring(raw):
     """ Return the first null terminated cstring from the bufffer. """
     return ctypes.create_string_buffer(raw).value
+
 
 def _split_namespace(ns):
     """ Return a tuple of (db, collecton) from the "db.coll" string. """

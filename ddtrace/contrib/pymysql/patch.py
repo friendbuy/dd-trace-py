@@ -8,15 +8,15 @@ from ddtrace.contrib.dbapi import TracedConnection
 from ...ext import net, db, AppTypes
 
 CONN_ATTR_BY_TAG = {
-    net.TARGET_HOST: 'host',
-    net.TARGET_PORT: 'port',
-    db.USER: 'user',
-    db.NAME: 'db',
+    net.TARGET_HOST: "host",
+    net.TARGET_PORT: "port",
+    db.USER: "user",
+    db.NAME: "db",
 }
 
 
 def patch():
-    wrapt.wrap_function_wrapper('pymysql', 'connect', _connect)
+    wrapt.wrap_function_wrapper("pymysql", "connect", _connect)
 
 
 def unpatch():
@@ -30,7 +30,7 @@ def _connect(func, instance, args, kwargs):
 
 
 def patch_conn(conn):
-    tags = {t: getattr(conn, a, '') for t, a in CONN_ATTR_BY_TAG.items()}
+    tags = {t: getattr(conn, a, "") for t, a in CONN_ATTR_BY_TAG.items()}
     pin = Pin(service="pymysql", app="pymysql", app_type=AppTypes.db, tags=tags)
 
     # grab the metadata from the conn

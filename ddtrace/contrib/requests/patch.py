@@ -13,23 +13,28 @@ from .connection import _wrap_request
 from ...ext import AppTypes
 
 # requests default settings
-config._add('requests',{
-    'service_name': get_env('requests', 'service_name', DEFAULT_SERVICE),
-    'distributed_tracing': asbool(get_env('requests', 'distributed_tracing', False)),
-    'split_by_domain': asbool(get_env('requests', 'split_by_domain', False)),
-})
+config._add(
+    "requests",
+    {
+        "service_name": get_env("requests", "service_name", DEFAULT_SERVICE),
+        "distributed_tracing": asbool(
+            get_env("requests", "distributed_tracing", False)
+        ),
+        "split_by_domain": asbool(get_env("requests", "split_by_domain", False)),
+    },
+)
 
 
 def patch():
     """Activate http calls tracing"""
-    if getattr(requests, '__datadog_patch', False):
+    if getattr(requests, "__datadog_patch", False):
         return
-    setattr(requests, '__datadog_patch', True)
+    setattr(requests, "__datadog_patch", True)
 
-    _w('requests', 'Session.request', _wrap_request)
+    _w("requests", "Session.request", _wrap_request)
     Pin(
-        service=config.requests['service_name'],
-        app='requests',
+        service=config.requests["service_name"],
+        app="requests",
         app_type=AppTypes.web,
         _config=config.requests,
     ).onto(requests.Session)
@@ -44,8 +49,8 @@ def patch():
 
 def unpatch():
     """Disable traced sessions"""
-    if not getattr(requests, '__datadog_patch', False):
+    if not getattr(requests, "__datadog_patch", False):
         return
-    setattr(requests, '__datadog_patch', False)
+    setattr(requests, "__datadog_patch", False)
 
-    _u(requests.Session, 'request')
+    _u(requests.Session, "request")

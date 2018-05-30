@@ -9,13 +9,13 @@ from ddtrace.ext import AppTypes
 from ...ext import errors
 from .util import APP, PRODUCER_SERVICE, WORKER_SERVICE, meta_from_context, require_pin
 
-PRODUCER_ROOT_SPAN = 'celery.apply'
-WORKER_ROOT_SPAN = 'celery.run'
+PRODUCER_ROOT_SPAN = "celery.apply"
+WORKER_ROOT_SPAN = "celery.run"
 # Task operations
-TASK_TAG_KEY = 'celery.action'
-TASK_APPLY = 'apply'
-TASK_APPLY_ASYNC = 'apply_async'
-TASK_RUN = 'run'
+TASK_TAG_KEY = "celery.action"
+TASK_APPLY = "apply"
+TASK_APPLY_ASYNC = "apply_async"
+TASK_RUN = "run"
 
 
 def patch_task(task, pin=None):
@@ -27,10 +27,10 @@ def patch_task(task, pin=None):
     pin = pin or Pin(service=WORKER_SERVICE, app=APP, app_type=AppTypes.worker)
 
     patch_methods = [
-        ('__init__', _task_init),
-        ('run', _task_run),
-        ('apply', _task_apply),
-        ('apply_async', _task_apply_async),
+        ("__init__", _task_init),
+        ("run", _task_run),
+        ("apply", _task_apply),
+        ("apply_async", _task_apply_async),
     ]
     for method_name, wrapper in patch_methods:
         # Get original method
@@ -55,14 +55,10 @@ def patch_task(task, pin=None):
     pin.onto(task)
     return task
 
+
 def unpatch_task(task):
     """ unpatch_task will remove tracing from a celery task """
-    patched_methods = [
-        '__init__',
-        'run',
-        'apply',
-        'apply_async',
-    ]
+    patched_methods = ["__init__", "run", "apply", "apply_async"]
     for method_name in patched_methods:
         # Get wrapped method
         wrapper = getattr(task, method_name, None)
@@ -90,7 +86,9 @@ def _task_init(func, task, args, kwargs):
 
 @require_pin
 def _task_run(pin, func, task, args, kwargs):
-    with pin.tracer.trace(WORKER_ROOT_SPAN, service=WORKER_SERVICE, resource=task.name) as span:
+    with pin.tracer.trace(
+        WORKER_ROOT_SPAN, service=WORKER_SERVICE, resource=task.name
+    ) as span:
         # Set meta data from task request
         span.set_metas(meta_from_context(task.request))
         span.set_meta(TASK_TAG_KEY, TASK_RUN)
@@ -101,13 +99,15 @@ def _task_run(pin, func, task, args, kwargs):
 
 @require_pin
 def _task_apply(pin, func, task, args, kwargs):
-    with pin.tracer.trace(PRODUCER_ROOT_SPAN, service=PRODUCER_SERVICE, resource=task.name) as span:
+    with pin.tracer.trace(
+        PRODUCER_ROOT_SPAN, service=PRODUCER_SERVICE, resource=task.name
+    ) as span:
         # Call the original `apply` function
         res = func(*args, **kwargs)
 
         # Set meta data from response
-        span.set_meta('id', res.id)
-        span.set_meta('state', res.state)
+        span.set_meta("id", res.id)
+        span.set_meta("state", res.state)
         span.set_meta(TASK_TAG_KEY, TASK_APPLY)
         if res.traceback:
             span.error = 1
@@ -117,11 +117,20 @@ def _task_apply(pin, func, task, args, kwargs):
 
 @require_pin
 def _task_apply_async(pin, func, task, args, kwargs):
-    with pin.tracer.trace(PRODUCER_ROOT_SPAN, service=PRODUCER_SERVICE, resource=task.name) as span:
+    with pin.tracer.trace(
+        PRODUCER_ROOT_SPAN, service=PRODUCER_SERVICE, resource=task.name
+    ) as span:
         # Extract meta data from `kwargs`
         meta_keys = (
-            'compression', 'countdown', 'eta', 'exchange', 'expires',
-            'priority', 'routing_key', 'serializer', 'queue',
+            "compression",
+            "countdown",
+            "eta",
+            "exchange",
+            "expires",
+            "priority",
+            "routing_key",
+            "serializer",
+            "queue",
         )
         for name in meta_keys:
             if name in kwargs:
@@ -134,5 +143,5 @@ def _task_apply_async(pin, func, task, args, kwargs):
         # Set meta data from response
         # DEV: Calling `res.traceback` or `res.state` will make an
         #   API call to the backend for the properties
-        span.set_meta('id', res.id)
+        span.set_meta("id", res.id)
         return res

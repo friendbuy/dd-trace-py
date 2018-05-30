@@ -14,9 +14,9 @@ def execute(func, handler, args, kwargs):
     """
     # retrieve tracing settings
     settings = handler.settings[CONFIG_KEY]
-    tracer = settings['tracer']
-    service = settings['default_service']
-    distributed_tracing = settings['distributed_tracing']
+    tracer = settings["tracer"]
+    service = settings["default_service"]
+    distributed_tracing = settings["distributed_tracing"]
 
     with TracerStackContext():
         # attach the context to the request
@@ -31,9 +31,7 @@ def execute(func, handler, args, kwargs):
 
         # store the request span in the request so that it can be used later
         request_span = tracer.trace(
-            'tornado.request',
-            service=service,
-            span_type=http.TYPE
+            "tornado.request", service=service, span_type=http.TYPE
         )
         setattr(handler.request, REQUEST_SPAN_KEY, request_span)
 
@@ -53,10 +51,10 @@ def on_finish(func, handler, args, kwargs):
         # default handler class will be used so we don't pollute the resource
         # space here
         klass = handler.__class__
-        request_span.resource = '{}.{}'.format(klass.__module__, klass.__name__)
-        request_span.set_tag('http.method', request.method)
-        request_span.set_tag('http.status_code', handler.get_status())
-        request_span.set_tag('http.url', request.uri)
+        request_span.resource = "{}.{}".format(klass.__module__, klass.__name__)
+        request_span.set_tag("http.method", request.method)
+        request_span.set_tag("http.status_code", handler.get_status())
+        request_span.set_tag("http.url", request.uri)
         request_span.finish()
 
     return func(*args, **kwargs)
@@ -75,7 +73,7 @@ def log_exception(func, handler, args, kwargs):
         return func(*args, **kwargs)
 
     # retrieve the current span
-    tracer = handler.settings[CONFIG_KEY]['tracer']
+    tracer = handler.settings[CONFIG_KEY]["tracer"]
     current_span = tracer.current_span()
 
     if isinstance(value, HTTPError):

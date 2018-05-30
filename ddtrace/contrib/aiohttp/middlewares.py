@@ -7,9 +7,9 @@ from ...context import Context
 from ...propagation.http import HTTPPropagator
 
 
-CONFIG_KEY = 'datadog_trace'
-REQUEST_CONTEXT_KEY = 'datadog_context'
-REQUEST_SPAN_KEY = '__datadog_request_span'
+CONFIG_KEY = "datadog_trace"
+REQUEST_CONTEXT_KEY = "datadog_context"
+REQUEST_SPAN_KEY = "__datadog_request_span"
 
 
 @asyncio.coroutine
@@ -21,12 +21,13 @@ def trace_middleware(app, handler):
         * the Task is used by the internal automatic instrumentation
         * the ``Context`` attached to the request can be freely used in the application code
     """
+
     @asyncio.coroutine
     def attach_context(request):
         # application configs
-        tracer = app[CONFIG_KEY]['tracer']
-        service = app[CONFIG_KEY]['service']
-        distributed_tracing = app[CONFIG_KEY]['distributed_tracing_enabled']
+        tracer = app[CONFIG_KEY]["tracer"]
+        service = app[CONFIG_KEY]["service"]
+        distributed_tracing = app[CONFIG_KEY]["distributed_tracing_enabled"]
 
         context = tracer.context_provider.active()
 
@@ -40,9 +41,7 @@ def trace_middleware(app, handler):
 
         # trace the handler
         request_span = tracer.trace(
-            'aiohttp.request',
-            service=service,
-            span_type=http.TYPE,
+            "aiohttp.request", service=service, span_type=http.TYPE
         )
 
         # attach the context and the root span to the request; the Context
@@ -55,6 +54,7 @@ def trace_middleware(app, handler):
         except Exception:
             request_span.set_traceback()
             raise
+
     return attach_context
 
 
@@ -76,21 +76,21 @@ def on_prepare(request, response):
         # collect the resource name based on http resource type
         res_info = request.match_info.route.resource.get_info()
 
-        if res_info.get('path'):
-            resource = res_info.get('path')
-        elif res_info.get('formatter'):
-            resource = res_info.get('formatter')
-        elif res_info.get('prefix'):
-            resource = res_info.get('prefix')
+        if res_info.get("path"):
+            resource = res_info.get("path")
+        elif res_info.get("formatter"):
+            resource = res_info.get("formatter")
+        elif res_info.get("prefix"):
+            resource = res_info.get("prefix")
 
     request_span.resource = resource
-    request_span.set_tag('http.method', request.method)
-    request_span.set_tag('http.status_code', response.status)
-    request_span.set_tag('http.url', request.path)
+    request_span.set_tag("http.method", request.method)
+    request_span.set_tag("http.status_code", response.status)
+    request_span.set_tag("http.url", request.path)
     request_span.finish()
 
 
-def trace_app(app, tracer, service='aiohttp-web'):
+def trace_app(app, tracer, service="aiohttp-web"):
     """
     Tracing function that patches the ``aiohttp`` application so that it will be
     traced using the given ``tracer``.
@@ -101,26 +101,22 @@ def trace_app(app, tracer, service='aiohttp-web'):
     """
 
     # safe-guard: don't trace an application twice
-    if getattr(app, '__datadog_trace', False):
+    if getattr(app, "__datadog_trace", False):
         return
-    setattr(app, '__datadog_trace', True)
+    setattr(app, "__datadog_trace", True)
 
     # configure datadog settings
     app[CONFIG_KEY] = {
-        'tracer': tracer,
-        'service': service,
-        'distributed_tracing_enabled': False,
+        "tracer": tracer,
+        "service": service,
+        "distributed_tracing_enabled": False,
     }
 
     # the tracer must work with asynchronous Context propagation
     tracer.configure(context_provider=context_provider)
 
     # configure the current service
-    tracer.set_service_info(
-        service=service,
-        app='aiohttp',
-        app_type=AppTypes.web,
-    )
+    tracer.set_service_info(service=service, app="aiohttp", app_type=AppTypes.web)
 
     # add the async tracer middleware as a first middleware
     # and be sure that the on_prepare signal is the last one

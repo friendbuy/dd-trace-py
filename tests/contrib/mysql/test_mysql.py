@@ -12,8 +12,9 @@ from ...util import assert_dict_issuperset
 
 class MySQLCore(object):
     """Base test case for MySQL drivers"""
+
     conn = None
-    TEST_SERVICE = 'test-mysql'
+    TEST_SERVICE = "test-mysql"
 
     def tearDown(self):
         # Reuse the connection across tests
@@ -42,15 +43,18 @@ class MySQLCore(object):
 
         span = spans[0]
         eq_(span.service, self.TEST_SERVICE)
-        eq_(span.name, 'mysql.query')
-        eq_(span.span_type, 'sql')
+        eq_(span.name, "mysql.query")
+        eq_(span.span_type, "sql")
         eq_(span.error, 0)
-        assert_dict_issuperset(span.meta, {
-            'out.host': u'127.0.0.1',
-            'out.port': u'3306',
-            'db.name': u'test',
-            'db.user': u'test',
-        })
+        assert_dict_issuperset(
+            span.meta,
+            {
+                "out.host": u"127.0.0.1",
+                "out.port": u"3306",
+                "db.name": u"test",
+                "db.user": u"test",
+            },
+        )
 
     def test_query_with_several_rows(self):
         conn, tracer = self._get_conn_tracer()
@@ -63,7 +67,7 @@ class MySQLCore(object):
         spans = writer.pop()
         eq_(len(spans), 1)
         span = spans[0]
-        ok_(span.get_tag('sql.query') is None)
+        ok_(span.get_tag("sql.query") is None)
 
     def test_query_many(self):
         # tests that the executemany method is correctly wrapped.
@@ -72,15 +76,16 @@ class MySQLCore(object):
         tracer.enabled = False
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             create table if not exists dummy (
                 dummy_key VARCHAR(32) PRIMARY KEY,
-                dummy_value TEXT NOT NULL)""")
+                dummy_value TEXT NOT NULL)"""
+        )
         tracer.enabled = True
 
         stmt = "INSERT INTO dummy (dummy_key, dummy_value) VALUES (%s, %s)"
-        data = [("foo","this is foo"),
-                ("bar","this is bar")]
+        data = [("foo", "this is foo"), ("bar", "this is bar")]
         cursor.executemany(stmt, data)
         query = "SELECT dummy_key, dummy_value FROM dummy ORDER BY dummy_key"
         cursor.execute(query)
@@ -94,7 +99,7 @@ class MySQLCore(object):
         spans = writer.pop()
         eq_(len(spans), 2)
         span = spans[-1]
-        ok_(span.get_tag('sql.query') is None)
+        ok_(span.get_tag("sql.query") is None)
         cursor.execute("drop table if exists dummy")
 
     def test_query_proc(self):
@@ -105,11 +110,13 @@ class MySQLCore(object):
         tracer.enabled = False
         cursor = conn.cursor()
         cursor.execute("DROP PROCEDURE IF EXISTS sp_sum")
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE PROCEDURE sp_sum (IN p1 INTEGER, IN p2 INTEGER, OUT p3 INTEGER)
             BEGIN
                 SET p3 := p1 + p2;
-            END;""")
+            END;"""
+        )
 
         tracer.enabled = True
         proc = "sp_sum"
@@ -126,20 +133,22 @@ class MySQLCore(object):
         # can expect the last closed span to be our proc.
         span = spans[len(spans) - 1]
         eq_(span.service, self.TEST_SERVICE)
-        eq_(span.name, 'mysql.query')
-        eq_(span.span_type, 'sql')
+        eq_(span.name, "mysql.query")
+        eq_(span.span_type, "sql")
         eq_(span.error, 0)
-        assert_dict_issuperset(span.meta, {
-            'out.host': u'127.0.0.1',
-            'out.port': u'3306',
-            'db.name': u'test',
-            'db.user': u'test',
-        })
-        ok_(span.get_tag('sql.query') is None)
+        assert_dict_issuperset(
+            span.meta,
+            {
+                "out.host": u"127.0.0.1",
+                "out.port": u"3306",
+                "db.name": u"test",
+                "db.user": u"test",
+            },
+        )
+        ok_(span.get_tag("sql.query") is None)
 
 
 class TestMysqlPatch(MySQLCore):
-
     def setUp(self):
         patch()
 
@@ -155,11 +164,10 @@ class TestMysqlPatch(MySQLCore):
             # Ensure that the default pin is there, with its default value
             pin = Pin.get_from(self.conn)
             assert pin
-            assert pin.service == 'mysql'
+            assert pin.service == "mysql"
             # Customize the service
             # we have to apply it on the existing one since new one won't inherit `app`
-            pin.clone(
-                service=self.TEST_SERVICE, tracer=tracer).onto(self.conn)
+            pin.clone(service=self.TEST_SERVICE, tracer=tracer).onto(self.conn)
 
             return self.conn, tracer
 
@@ -177,8 +185,7 @@ class TestMysqlPatch(MySQLCore):
             conn = mysql.connector.connect(**MYSQL_CONFIG)
             pin = Pin.get_from(conn)
             assert pin
-            pin.clone(
-                service=self.TEST_SERVICE, tracer=tracer).onto(conn)
+            pin.clone(service=self.TEST_SERVICE, tracer=tracer).onto(conn)
             assert conn.is_connected()
 
             cursor = conn.cursor()
@@ -190,16 +197,19 @@ class TestMysqlPatch(MySQLCore):
 
             span = spans[0]
             eq_(span.service, self.TEST_SERVICE)
-            eq_(span.name, 'mysql.query')
-            eq_(span.span_type, 'sql')
+            eq_(span.name, "mysql.query")
+            eq_(span.span_type, "sql")
             eq_(span.error, 0)
-            assert_dict_issuperset(span.meta, {
-                'out.host': u'127.0.0.1',
-                'out.port': u'3306',
-                'db.name': u'test',
-                'db.user': u'test',
-            })
-            ok_(span.get_tag('sql.query') is None)
+            assert_dict_issuperset(
+                span.meta,
+                {
+                    "out.host": u"127.0.0.1",
+                    "out.port": u"3306",
+                    "db.name": u"test",
+                    "db.user": u"test",
+                },
+            )
+            ok_(span.get_tag("sql.query") is None)
 
         finally:
             unpatch()

@@ -11,14 +11,15 @@ from flask import g, request, signals
 log = logging.getLogger(__name__)
 
 
-SPAN_NAME = 'flask.request'
+SPAN_NAME = "flask.request"
 
 
 class TraceMiddleware(object):
-
-    def __init__(self, app, tracer, service="flask", use_signals=True, distributed_tracing=False):
+    def __init__(
+        self, app, tracer, service="flask", use_signals=True, distributed_tracing=False
+    ):
         self.app = app
-        log.debug('flask: initializing trace middleware')
+        log.debug("flask: initializing trace middleware")
 
         self._tracer = tracer
         self._service = service
@@ -26,9 +27,7 @@ class TraceMiddleware(object):
         self.use_signals = use_signals
 
         self._tracer.set_service_info(
-            service=service,
-            app="flask",
-            app_type=AppTypes.web,
+            service=service, app="flask", app_type=AppTypes.web
         )
 
         # Install hooks which time requests.
@@ -42,9 +41,7 @@ class TraceMiddleware(object):
         if use_signals and not signals.signals_available:
             log.debug(_blinker_not_installed_msg)
         self.use_signals = use_signals and signals.signals_available
-        timing_signals = {
-            'got_request_exception': self._request_exception,
-        }
+        timing_signals = {"got_request_exception": self._request_exception}
         self._receivers = []
         if self.use_signals and _signals_exist(timing_signals):
             self._connect(timing_signals)
@@ -78,7 +75,7 @@ class TraceMiddleware(object):
         try:
             self._process_response(response)
         except Exception:
-            log.debug('flask: error tracing response', exc_info=True)
+            log.debug("flask: error tracing response", exc_info=True)
         return response
 
     def _teardown_request(self, exception):
@@ -86,15 +83,15 @@ class TraceMiddleware(object):
             will be passed in.
         """
         # when we teardown the span, ensure we have a clean slate.
-        span = getattr(g, 'flask_datadog_span', None)
-        setattr(g, 'flask_datadog_span', None)
+        span = getattr(g, "flask_datadog_span", None)
+        setattr(g, "flask_datadog_span", None)
         if not span:
             return
 
         try:
             self._finish_span(span, exception=exception)
         except Exception:
-            log.debug('flask: error finishing span', exc_info=True)
+            log.debug("flask: error finishing span", exc_info=True)
 
     def _start_span(self):
         if self._use_distributed_tracing:
@@ -105,24 +102,22 @@ class TraceMiddleware(object):
                 self._tracer.context_provider.activate(context)
         try:
             g.flask_datadog_span = self._tracer.trace(
-                SPAN_NAME,
-                service=self._service,
-                span_type=http.TYPE,
+                SPAN_NAME, service=self._service, span_type=http.TYPE
             )
         except Exception:
-            log.debug('flask: error tracing request', exc_info=True)
+            log.debug("flask: error tracing request", exc_info=True)
 
     def _process_response(self, response):
-        span = getattr(g, 'flask_datadog_span', None)
+        span = getattr(g, "flask_datadog_span", None)
         if not (span and span.sampled):
             return
 
-        code = response.status_code if response else ''
+        code = response.status_code if response else ""
         span.set_tag(http.STATUS_CODE, code)
 
     def _request_exception(self, *args, **kwargs):
         exception = kwargs.get("exception", None)
-        span = getattr(g, 'flask_datadog_span', None)
+        span = getattr(g, "flask_datadog_span", None)
         if span and exception:
             _set_error_on_span(span, exception)
 
@@ -146,13 +141,13 @@ class TraceMiddleware(object):
         span.error = 0 if code < 500 else 1
 
         # the request isn't guaranteed to exist here, so only use it carefully.
-        method = ''
-        endpoint = ''
-        url = ''
+        method = ""
+        endpoint = ""
+        url = ""
         if request:
             method = request.method
             endpoint = request.endpoint or code
-            url = request.base_url or ''
+            url = request.base_url or ""
 
         # Let users specify their own resource in middleware if they so desire.
         # See case https://github.com/DataDog/dd-trace-py/issues/353
@@ -165,6 +160,7 @@ class TraceMiddleware(object):
         span.set_tag(http.METHOD, method)
         span.finish()
 
+
 def _set_error_on_span(span, exception):
     # The 3 next lines might not be strictly required, since `set_traceback`
     # also get the exception from the sys.exc_info (and fill the error meta).
@@ -176,13 +172,14 @@ def _set_error_on_span(span, exception):
     # so attach the stack trace with `set_traceback`.
     span.set_traceback()
 
+
 def _patch_render(tracer):
     """ patch flask's render template methods with the given tracer. """
     # fall back to patching  global method
     _render = flask.templating._render
 
     def _traced_render(template, context, app):
-        with tracer.trace('flask.template') as span:
+        with tracer.trace("flask.template") as span:
             span.span_type = http.TEMPLATE
             span.set_tag("flask.template", template.name or "string")
             return _render(template, context, app)

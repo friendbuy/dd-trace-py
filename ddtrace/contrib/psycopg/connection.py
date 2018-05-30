@@ -15,7 +15,7 @@ from ...utils.deprecation import deprecated
 from psycopg2.extensions import connection, cursor
 
 
-@deprecated(message='Use patching instead (see the docs).', version='1.0.0')
+@deprecated(message="Use patching instead (see the docs).", version="1.0.0")
 def connection_factory(tracer, service="postgres"):
     """ Return a connection factory class that will can be used to trace
         postgres queries.
@@ -24,15 +24,11 @@ def connection_factory(tracer, service="postgres"):
         >>> conn = pyscopg2.connect(..., connection_factory=factory)
     """
 
-    tracer.set_service_info(
-        service=service,
-        app="postgres",
-        app_type=AppTypes.db,
-    )
+    tracer.set_service_info(service=service, app="postgres", app_type=AppTypes.db)
 
-    return functools.partial(TracedConnection,
-        datadog_tracer=tracer,
-        datadog_service=service)
+    return functools.partial(
+        TracedConnection, datadog_tracer=tracer, datadog_service=service
+    )
 
 
 class TracedCursor(cursor):
@@ -49,7 +45,9 @@ class TracedCursor(cursor):
         if not self._datadog_tracer:
             return cursor.execute(self, query, vars)
 
-        with self._datadog_tracer.trace("postgres.query", service=self._datadog_service) as s:
+        with self._datadog_tracer.trace(
+            "postgres.query", service=self._datadog_service
+        ) as s:
             if not s.sampled:
                 return super(TracedCursor, self).execute(query, vars)
 
@@ -83,15 +81,17 @@ class TracedConnection(connection):
             net.TARGET_PORT: dsn.get("port"),
             db.NAME: dsn.get("dbname"),
             db.USER: dsn.get("user"),
-            "db.application" : dsn.get("application_name"),
+            "db.application": dsn.get("application_name"),
         }
 
-        self._datadog_cursor_class = functools.partial(TracedCursor,
-                datadog_tracer=self._datadog_tracer,
-                datadog_service=self._datadog_service,
-                datadog_tags=self._datadog_tags)
+        self._datadog_cursor_class = functools.partial(
+            TracedCursor,
+            datadog_tracer=self._datadog_tracer,
+            datadog_service=self._datadog_service,
+            datadog_tags=self._datadog_tags,
+        )
 
     def cursor(self, *args, **kwargs):
         """ register our custom cursor factory """
-        kwargs.setdefault('cursor_factory', self._datadog_cursor_class)
+        kwargs.setdefault("cursor_factory", self._datadog_cursor_class)
         return super(TracedConnection, self).cursor(*args, **kwargs)

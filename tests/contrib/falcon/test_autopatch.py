@@ -9,7 +9,7 @@ from .test_suite import FalconTestCase
 
 class AutoPatchTestCase(testing.TestCase, FalconTestCase):
     def setUp(self):
-        self._service = 'my-falcon'
+        self._service = "my-falcon"
         self.tracer = tracer
         self.tracer.writer = DummyWriter()
 

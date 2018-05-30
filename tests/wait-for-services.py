@@ -13,8 +13,10 @@ def try_until_timeout(exception):
     timeout.  The default timeout is about 20 seconds.
 
     """
+
     def wrap(fn):
         err = None
+
         def wrapper(*args, **kwargs):
             for i in range(100):
                 try:
@@ -27,7 +29,9 @@ def try_until_timeout(exception):
             else:
                 if err:
                     raise err
+
         return wrapper
+
     return wrap
 
 
@@ -45,6 +49,7 @@ def check_cassandra():
     with Cluster(**CASSANDRA_CONFIG).connect() as conn:
         conn.execute("SELECT now() FROM system.local")
 
+
 @try_until_timeout(Exception)
 def check_mysql():
     conn = mysql.connector.connect(**MYSQL_CONFIG)
@@ -53,11 +58,12 @@ def check_mysql():
     finally:
         conn.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     check_functions = {
-        'cassandra': check_cassandra,
-        'postgres': check_postgres,
-        'mysql': check_mysql
+        "cassandra": check_cassandra,
+        "postgres": check_postgres,
+        "mysql": check_mysql,
     }
     if len(sys.argv) >= 2:
         for service in sys.argv[1:]:

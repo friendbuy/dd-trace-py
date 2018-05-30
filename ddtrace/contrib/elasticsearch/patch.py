@@ -11,24 +11,29 @@ from ...pin import Pin
 from ...ext import http
 
 
-DEFAULT_SERVICE = 'elasticsearch'
-SPAN_TYPE = 'elasticsearch'
+DEFAULT_SERVICE = "elasticsearch"
+SPAN_TYPE = "elasticsearch"
 
 
 # NB: We are patching the default elasticsearch.transport module
 def patch():
 
-    if getattr(elasticsearch, '_datadog_patch', False):
+    if getattr(elasticsearch, "_datadog_patch", False):
         return
-    setattr(elasticsearch, '_datadog_patch', True)
-    wrapt.wrap_function_wrapper('elasticsearch.transport', 'Transport.perform_request', _perform_request)
-    Pin(service=DEFAULT_SERVICE, app="elasticsearch", app_type="db").onto(elasticsearch.transport.Transport)
+    setattr(elasticsearch, "_datadog_patch", True)
+    wrapt.wrap_function_wrapper(
+        "elasticsearch.transport", "Transport.perform_request", _perform_request
+    )
+    Pin(service=DEFAULT_SERVICE, app="elasticsearch", app_type="db").onto(
+        elasticsearch.transport.Transport
+    )
 
 
 def unpatch():
-    if getattr(elasticsearch, '_datadog_patch', False):
-        setattr(elasticsearch, '_datadog_patch', False)
-        unwrap(elasticsearch.transport.Transport, 'perform_request')
+    if getattr(elasticsearch, "_datadog_patch", False):
+        setattr(elasticsearch, "_datadog_patch", False)
+        unwrap(elasticsearch.transport.Transport, "perform_request")
+
 
 def _perform_request(func, instance, args, kwargs):
     pin = Pin.get_from(instance)
@@ -41,8 +46,8 @@ def _perform_request(func, instance, args, kwargs):
             return func(*args, **kwargs)
 
         method, url = args
-        params = kwargs.get('params')
-        body = kwargs.get('body')
+        params = kwargs.get("params")
+        body = kwargs.get("body")
 
         span.service = pin.service
         span.span_type = SPAN_TYPE
@@ -58,7 +63,7 @@ def _perform_request(func, instance, args, kwargs):
         try:
             result = func(*args, **kwargs)
         except TransportError as e:
-            span.set_tag(http.STATUS_CODE, getattr(e, 'status_code', 500))
+            span.set_tag(http.STATUS_CODE, getattr(e, "status_code", 500))
             raise
 
         try:

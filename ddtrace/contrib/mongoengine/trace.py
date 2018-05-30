@@ -28,9 +28,7 @@ class WrappedConnect(wrapt.ObjectProxy):
             # uses internally are traced.
 
             pin.tracer.set_service_info(
-                service=pin.service,
-                app=mongox.TYPE,
-                app_type=AppTypes.db,
+                service=pin.service, app=mongox.TYPE, app_type=AppTypes.db
             )
             client = TracedMongoClient(client)
             ddtrace.Pin(service=pin.service, tracer=pin.tracer).onto(client)

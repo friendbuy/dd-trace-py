@@ -6,12 +6,7 @@ from nose.tools import eq_, ok_
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import (
-    create_engine,
-    Column,
-    Integer,
-    String,
-)
+from sqlalchemy import create_engine, Column, Integer, String
 
 # project
 from ddtrace.contrib.sqlalchemy import trace_engine
@@ -25,7 +20,8 @@ Base = declarative_base()
 
 class Player(Base):
     """Player entity used to test SQLAlchemy ORM"""
-    __tablename__ = 'players'
+
+    __tablename__ = "players"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
@@ -52,6 +48,7 @@ class SQLAlchemyTestMixin(object):
     To check specific tags in each test, you must implement the
     `check_meta(self, span)` method.
     """
+
     VENDOR = None
     SQL_DB = None
     SERVICE = None
@@ -60,7 +57,7 @@ class SQLAlchemyTestMixin(object):
     def create_engine(self, engine_args):
         # create a SQLAlchemy engine
         config = dict(engine_args)
-        url = config.pop('url')
+        url = config.pop("url")
         return create_engine(url, **config)
 
     @contextlib.contextmanager
@@ -100,7 +97,7 @@ class SQLAlchemyTestMixin(object):
 
     def test_orm_insert(self):
         # ensures that the ORM session is traced
-        wayne = Player(id=1, name='wayne')
+        wayne = Player(id=1, name="wayne")
         self.session.add(wayne)
         self.session.commit()
 
@@ -110,19 +107,19 @@ class SQLAlchemyTestMixin(object):
         eq_(len(traces[0]), 1)
         span = traces[0][0]
         # span fields
-        eq_(span.name, '{}.query'.format(self.VENDOR))
+        eq_(span.name, "{}.query".format(self.VENDOR))
         eq_(span.service, self.SERVICE)
-        ok_('INSERT INTO players' in span.resource)
-        eq_(span.get_tag('sql.db'), self.SQL_DB)
-        eq_(span.get_tag('sql.rows'), '1')
+        ok_("INSERT INTO players" in span.resource)
+        eq_(span.get_tag("sql.db"), self.SQL_DB)
+        eq_(span.get_tag("sql.rows"), "1")
         self.check_meta(span)
-        eq_(span.span_type, 'sql')
+        eq_(span.span_type, "sql")
         eq_(span.error, 0)
         ok_(span.duration > 0)
 
     def test_session_query(self):
         # ensures that the Session queries are traced
-        out = list(self.session.query(Player).filter_by(name='wayne'))
+        out = list(self.session.query(Player).filter_by(name="wayne"))
         eq_(len(out), 0)
 
         traces = self.tracer.writer.pop_traces()
@@ -131,19 +128,22 @@ class SQLAlchemyTestMixin(object):
         eq_(len(traces[0]), 1)
         span = traces[0][0]
         # span fields
-        eq_(span.name, '{}.query'.format(self.VENDOR))
+        eq_(span.name, "{}.query".format(self.VENDOR))
         eq_(span.service, self.SERVICE)
-        ok_('SELECT players.id AS players_id, players.name AS players_name \nFROM players \nWHERE players.name' in span.resource)
-        eq_(span.get_tag('sql.db'), self.SQL_DB)
+        ok_(
+            "SELECT players.id AS players_id, players.name AS players_name \nFROM players \nWHERE players.name"
+            in span.resource
+        )
+        eq_(span.get_tag("sql.db"), self.SQL_DB)
         self.check_meta(span)
-        eq_(span.span_type, 'sql')
+        eq_(span.span_type, "sql")
         eq_(span.error, 0)
         ok_(span.duration > 0)
 
     def test_engine_connect_execute(self):
         # ensures that engine.connect() is properly traced
         with self.connection() as conn:
-            rows = conn.execute('SELECT * FROM players').fetchall()
+            rows = conn.execute("SELECT * FROM players").fetchall()
             eq_(len(rows), 0)
 
         traces = self.tracer.writer.pop_traces()
@@ -152,19 +152,17 @@ class SQLAlchemyTestMixin(object):
         eq_(len(traces[0]), 1)
         span = traces[0][0]
         # span fields
-        eq_(span.name, '{}.query'.format(self.VENDOR))
+        eq_(span.name, "{}.query".format(self.VENDOR))
         eq_(span.service, self.SERVICE)
-        eq_(span.resource, 'SELECT * FROM players')
-        eq_(span.get_tag('sql.db'), self.SQL_DB)
+        eq_(span.resource, "SELECT * FROM players")
+        eq_(span.get_tag("sql.db"), self.SQL_DB)
         self.check_meta(span)
-        eq_(span.span_type, 'sql')
+        eq_(span.span_type, "sql")
         eq_(span.error, 0)
         ok_(span.duration > 0)
 
     def test_traced_service(self):
         # ensures that the service is set as expected
         services = self.tracer.writer.pop_services()
-        expected = {
-            self.SERVICE: {'app': self.VENDOR, 'app_type': 'db'}
-        }
+        expected = {self.SERVICE: {"app": self.VENDOR, "app_type": "db"}}
         eq_(services, expected)

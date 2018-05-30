@@ -20,6 +20,7 @@ class TestAiohttpSafety(TraceTestCase):
     bad traces are produced but the ``Context`` object will not
     leak memory.
     """
+
     def enable_tracing(self):
         # aiohttp TestCase with the wrong context provider
         trace_app(self.app, self.tracer)
@@ -35,7 +36,7 @@ class TestAiohttpSafety(TraceTestCase):
     def test_full_request(self):
         # it should create a root span when there is a handler hit
         # with the proper tags
-        request = yield from self.client.request('GET', '/template/')
+        request = yield from self.client.request("GET", "/template/")
         eq_(200, request.status)
         yield from request.text()
         # the trace is created
@@ -45,13 +46,13 @@ class TestAiohttpSafety(TraceTestCase):
         request_span = traces[0][0]
         template_span = traces[0][1]
         # request
-        eq_('aiohttp-web', request_span.service)
-        eq_('aiohttp.request', request_span.name)
-        eq_('/template/', request_span.resource)
+        eq_("aiohttp-web", request_span.service)
+        eq_("aiohttp.request", request_span.name)
+        eq_("/template/", request_span.resource)
         # template
-        eq_('aiohttp-web', template_span.service)
-        eq_('aiohttp.template', template_span.name)
-        eq_('aiohttp.template', template_span.resource)
+        eq_("aiohttp-web", template_span.service)
+        eq_("aiohttp.template", template_span.name)
+        eq_("aiohttp.template", template_span.resource)
 
     @unittest_run_loop
     @asyncio.coroutine
@@ -59,9 +60,9 @@ class TestAiohttpSafety(TraceTestCase):
         # it should produce a wrong trace, but the Context must
         # be finished
         def make_requests():
-            url = self.client.make_url('/delayed/')
-            response = request.urlopen(str(url)).read().decode('utf-8')
-            eq_('Done', response)
+            url = self.client.make_url("/delayed/")
+            response = request.urlopen(str(url)).read().decode("utf-8")
+            eq_("Done", response)
 
         # blocking call executed in different threads
         ctx = self.tracer.get_call_context()
