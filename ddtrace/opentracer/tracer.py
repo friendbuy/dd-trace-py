@@ -11,7 +11,7 @@ from .propagation import HTTPPropagator
 from .span import Span
 from .span_context import SpanContext
 from .settings import ConfigKeys as keys, config_invalid_keys
-from .util import merge_dicts
+from .util import merge_dicts, get_reasonable_service_name
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class Tracer(opentracing.Tracer):
         self._config = merge_dicts(DEFAULT_CONFIG, config)
 
         # Pull out commonly used properties for performance
-        self._service_name = service_name
+        self._service_name = service_name or get_reasonable_service_name()
         self._enabled = self._config.get(keys.ENABLED)
         self._debug = self._config.get(keys.DEBUG)
 
@@ -50,8 +50,6 @@ class Tracer(opentracing.Tracer):
                 str_invalid_keys = ','.join(invalid_keys)
                 raise ConfigException('invalid key(s) given (%s)'.format(str_invalid_keys))
 
-        # TODO: we should set a default reasonable `service_name` (__name__) or
-        # similar.
         if not self._service_name:
             raise ConfigException('a service_name is required')
 
@@ -203,7 +201,11 @@ class Tracer(opentracing.Tracer):
 
         # create a new otspan and ddspan using the ddtracer and associate it with the new otspan
         otspan = Span(self, ot_parent_context, operation_name)
-        ddspan = self._dd_tracer.start_span(name=operation_name, child_of=dd_parent)
+        ddspan = self._dd_tracer.start_span(
+            name=operation_name,
+            child_of=dd_parent,
+            service=self._service_name,
+        )
         ddspan.start = start_time or ddspan.start  # set the start time if one is specified
         if tags is not None:
             ddspan.set_tags(tags)

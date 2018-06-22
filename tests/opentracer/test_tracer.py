@@ -33,11 +33,8 @@ class TestTracerConfig(object):
 
     def test_no_service_name(self):
         """Config without a service_name should raise an exception."""
-        from ddtrace.settings import ConfigException
-
-        with pytest.raises(ConfigException):
-            tracer = Tracer()
-            assert tracer is not None
+        tracer = Tracer()
+        assert tracer._service_name
 
     def test_multiple_tracer_configs(self):
         """Ensure that a tracer config is a copy of the passed config."""
@@ -501,3 +498,14 @@ class TestTracer(object):
         """Very basic test for skeleton code"""
         tracer = Tracer(service_name='myservice')
         assert tracer is not None
+
+
+class TestTracerCompatibility(object):
+
+    def test_required_dd_fields(self):
+        """Ensure required fields needed for successful tracing are possessed
+        by the underlying datadog tracer.
+        """
+        tracer = Tracer()
+        with tracer.start_span('my_span') as span:
+            assert span._dd_span.service
