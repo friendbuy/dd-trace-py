@@ -119,19 +119,30 @@ class Tracer(opentracing.Tracer):
             when `Scope.close()` is called.
          :return: a `Scope`, already registered via the `ScopeManager`.
         """
-        span = self.start_span(
+        scope = self._start_span(
             operation_name=operation_name,
             child_of=child_of,
             references=references,
             tags=tags,
             start_time=start_time,
             ignore_active_span=ignore_active_span,
+            finish_on_close=finish_on_close,
         )
-        scope = self._scope_manager.activate(span, finish_on_close)
         return scope
 
     def start_span(self, operation_name=None, child_of=None, references=None,
                    tags=None, start_time=None, ignore_active_span=False):
+        return self._start_span(
+            operation_name=operation_name,
+            child_of=child_of,
+            references=references,
+            tags=tags,
+            start_time=start_time,
+            ignore_active_span=ignore_active_span
+        ).span
+
+    def _start_span(self, operation_name=None, child_of=None, references=None,
+                    tags=None, start_time=None, ignore_active_span=False, finish_on_close=False):
         """Starts and returns a new Span representing a unit of work.
 
         Starting a root Span (a Span with no causal references)::
@@ -212,8 +223,8 @@ class Tracer(opentracing.Tracer):
         otspan._add_dd_span(ddspan)
 
         # activate this new span
-        self._scope_manager.activate(otspan, False)
-        return otspan
+        scope = self._scope_manager.activate(otspan, finish_on_close)
+        return scope
 
     def inject(self, span_context, format, carrier):
         """Injects a span context into a carrier.
